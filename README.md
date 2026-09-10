@@ -1,20 +1,10 @@
 # ZMK Sofle Dongle — DYA Studio
 
-这是为 Sofle 分体键盘、独立接收器和 OLED 底座维护的 ZMK 固件仓库。
+这是为 Sofle 分体键盘和 Prospector 彩屏接收器维护的 ZMK 固件仓库。
 
-本项目在原有底座文件和键位配置上增加 DYA Studio、运行时配置以及接收器按键统计功能。
+本项目基于 `zmk-sofle-dongle-dya` 的 4.1 配置，保留 DYA Studio、运行时配置和原有 keymap，并将 USB 中央接收器更换为 Prospector。
 
-## 分支说明
-
-| 分支 | 用途 | 状态 |
-| --- | --- | --- |
-| `main` | 当前稳定固件，基于旧版 DYA/ZMK 技术栈 | 稳定 |
-| `4.1` | 基于 `main+dya` 和 Zephyr 4.1 的新版适配 | 开发测试中 |
-| `combo` | 旧技术栈上的 Runtime Combo 兼容实验 | 不建议日常使用 |
-
-日常使用请优先选择 `main`。需要测试新版 Runtime Macro 和接收器屏幕编辑时，选择 `4.1`。
-
-## 4.1 分支功能
+## 功能
 
 - DYA Studio 改键
 - Runtime Macro
@@ -24,12 +14,9 @@
 - BLE 管理
 - Settings RPC
 - Device Info（固件、硬件和运行状态诊断）
-- 接收器 OLED 显示
+- Prospector 240×280 彩屏显示
 - 左右手电量显示
-- Mac 修饰符图标
-- 层级名称居中显示
-- 接收器按键统计
-- DYA Custom Settings 屏幕设置
+- Prospector 层级、连接状态和修饰符显示
 
 ### 技术栈
 
@@ -47,12 +34,12 @@ GitHub Actions 构建完成后，在运行记录的 Artifacts 中下载固件压
 
 | 固件 | 刷写位置 |
 | --- | --- |
-| `eyelash_sofle_central_dongle_oled.uf2` | 独立接收器 |
+| `eyelash_sofle_prospector_dongle.uf2` | Prospector 接收器 |
 | `eyelash_sofle_peripheral_left...uf2` | 键盘左手 |
 | `eyelash_sofle_peripheral_right...uf2` | 键盘右手 |
 | `settings_reset...uf2` | 清除 ZMK 配对与设置 |
 
-升级到 `4.1` 分支时，建议接收器、左手和右手使用同一次 Actions 构建生成的固件，不要混用不同分支或不同构建批次。
+建议接收器、左手和右手使用同一次 Actions 构建生成的固件，不要混用不同构建批次。
 
 如连接异常，可依次刷入 `settings_reset`，再重新刷接收器、左手和右手固件并重新配对。清除设置会删除已保存的蓝牙配对和运行时配置。
 
@@ -92,35 +79,6 @@ GitHub Actions 构建完成后，在运行记录的 Artifacts 中下载固件压
 
 固件只预留运行时 Combo 槽位，没有增加默认 Combo，因此首次刷写不会改变现有按键行为。
 
-## 接收器屏幕编辑
-
-`4.1` 分支通过 DYA Custom Settings 暴露屏幕选项。进入 DYA Studio 的 Settings 页面，找到 `dongle_display_settings`。修改后点击 `Write` 即时预览；满意后再点击页面顶部的 `Save`，让设置在断电重启后继续保留。
-
-| 设置 | 作用 | 范围 |
-| --- | --- | --- |
-| `key_stats_enabled` | 是否显示按键统计 | 开/关 |
-| `key_stats_x` | 统计模块横坐标 | 0–78 |
-| `key_stats_y` | 统计模块纵坐标 | 0–46 |
-| `layer_alignment` | 层级文字对齐方式 | 0–2 |
-| `layer_width` | 层级名称滚动区域宽度 | 20–78 |
-| `mac_modifiers` | Mac/Windows 修饰符图标 | `true`=Mac，`false`=Windows |
-| `dongle_battery_enabled` | 是否显示接收器自身电量 | 开/关 |
-| `bongo_cat_enabled` | 是否显示猫动画 | 开/关 |
-| `modifiers_enabled` | 是否显示修饰符图标 | 开/关 |
-| `layer_enabled` | 是否显示层级名称 | 开/关 |
-| `wpm_enabled` | 是否显示 WPM | 开/关 |
-| `wpm_disabled_layers` | 不显示 WPM 的层名，逗号分隔 | 字符串 |
-
-`layer_alignment`：
-
-- `0`：左对齐
-- `1`：居中
-- `2`：右对齐
-
-通过 DYA 写入以上设置后，OLED 会立即刷新；点击页面顶部的 `Save` 后可在断电重启后保留。OLED 熄屏继续使用 ZMK 原生的 Idle 机制，当前默认无操作 30 秒后熄屏，不作为独立的 DYA 显示设置开放。
-
-屏幕旋转、分辨率、`segment-offset`、反色和颜色深度仍由设备树固定，不提供运行时修改，以避免 OLED 控制器参数错误导致乱码。
-
 ## Device Info
 
 `4.1` 分支仅在接收器固件中启用 Device Info。通过 USB 连接接收器并打开 DYA Studio 的 Troubleshooting 页面后，可以查看：
@@ -133,26 +91,6 @@ GitHub Actions 构建完成后，在运行记录的 Artifacts 中下载固件压
 
 设备信息默认遵循 Studio 的安全访问设置。左右手固件不启用该模块；DYA 读取的是 USB 接收器本身的信息。
 
-## 按键统计
-
-接收器 OLED 显示：
-
-- `T`：历史累计按键次数
-- `D`：本次启动后的按键次数
-
-仅统计物理按键按下事件：
-
-- 不统计编码器
-- 不统计摇杆或鼠标移动
-- 长按自动重复只计一次物理按下
-
-数字会按屏幕宽度缩写，例如：
-
-- `999`
-- `1.4k`
-- `1.4m`
-- `1.4b`
-
 ## 编码器
 
 当前 keymap 中：
@@ -162,7 +100,7 @@ GitHub Actions 构建完成后，在运行记录的 Artifacts 中下载固件压
 - SYS：上下滚动
 - 第 4 层：固定滚动行为
 
-Runtime Macro 和屏幕设置不应修改这些编码器绑定。
+编码器绑定可通过 DYA Runtime Sensor Rotate 页面修改。旧 OLED 的 `dongle_display_settings` 已完全移除。
 
 ## 编译
 
