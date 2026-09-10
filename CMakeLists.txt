@@ -6,7 +6,8 @@ if(CONFIG_ZMK_KEY_STATS)
   target_sources(app PRIVATE src/key_stats.c)
 endif()
 
-if(CONFIG_ZMK_CUSTOM_SETTINGS)
+# The monochrome OLED settings must not be exposed by the Prospector receiver.
+if(CONFIG_ZMK_CUSTOM_SETTINGS AND CONFIG_SHIELD_DONGLE_DISPLAY)
   target_sources(app PRIVATE src/display_settings.c)
 endif()
 
