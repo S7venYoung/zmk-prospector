@@ -4,6 +4,7 @@
  */
 
 #include <lvgl.h>
+#include <zephyr/dt-bindings/input/cst816s-gesture-codes.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/input/input.h>
 #include <zephyr/kernel.h>
@@ -143,13 +144,22 @@ static void theme_touch_callback(struct input_event *event, void *user_data) {
     static int16_t touch_x;
     static int16_t touch_y;
 
-    if ((event->code == INPUT_KEY_LEFT || event->code == INPUT_KEY_UP) && event->value) {
+    if (event->type == INPUT_EV_DEVICE) {
         hardware_gesture_handled = true;
-        queue_theme_switch(-1);
-    } else if ((event->code == INPUT_KEY_RIGHT || event->code == INPUT_KEY_DOWN) &&
-               event->value) {
-        hardware_gesture_handled = true;
-        queue_theme_switch(1);
+        switch (event->code) {
+        case CST816S_GESTURE_CODE_SWIPE_LEFT:
+        case CST816S_GESTURE_CODE_SWIPE_UP:
+            queue_theme_switch(-1);
+            break;
+        case CST816S_GESTURE_CODE_SWIPE_RIGHT:
+        case CST816S_GESTURE_CODE_SWIPE_DOWN:
+        case CST816S_GESTURE_CODE_SINGLE_CLICK:
+        case CST816S_GESTURE_CODE_DOUBLE_CLICK:
+            queue_theme_switch(1);
+            break;
+        default:
+            break;
+        }
     } else if (event->code == INPUT_ABS_X) {
         touch_x = event->value;
     } else if (event->code == INPUT_ABS_Y) {
