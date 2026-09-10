@@ -11,7 +11,6 @@
 / {
     chosen {
         zmk,kscan = &prospector_mock_kscan;
-        zmk,matrix-transform = &default_transform;
         zmk,physical-layout = &eyelash_sofle_layout;
     };
 
