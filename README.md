@@ -112,6 +112,10 @@ GitHub Actions 构建完成后，在运行记录的 Artifacts 中下载固件压
 
 首次刷写默认使用 `SOFLE // CODEX`。执行接收器 Settings Reset 后也会恢复默认主题。
 
+触摸屏需要在显示接线之外连接四根触摸信号线：`TP_SDA → D4`、`TP_SCL → D5`、
+`TP_INT → D0`、`TP_RST → D1`。仅使用带触摸面板的 LCD、但未连接这四根线时，
+屏幕可以正常显示，但无法切换主题。本配置使用轮询读取触摸，避免悬空的中断线影响键盘输入。
+
 ## 编译
 
 仓库使用 GitHub Actions 自动构建：
