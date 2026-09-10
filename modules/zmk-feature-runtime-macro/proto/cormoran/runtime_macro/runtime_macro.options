@@ -1,0 +1,14 @@
+cormoran.runtime_macro.MacroSummary.name       max_size:32
+cormoran.runtime_macro.MacroDetail.name        max_size:32
+cormoran.runtime_macro.CreateMacroRequest.name max_size:32
+cormoran.runtime_macro.DeleteMacroRequest.name max_size:32
+cormoran.runtime_macro.RenameMacroRequest.old_name max_size:32
+cormoran.runtime_macro.RenameMacroRequest.new_name max_size:32
+# Streamed at encode time by a pb_callback_t (see encode_macro_steps_cb) so a
+# full macro is never materialized as a steps[64] array (~4.6 KB) in the
+# response buffer. Wire format is unchanged (repeated MacroStep).
+cormoran.runtime_macro.MacroDetail.steps       type:FT_CALLBACK
+cormoran.runtime_macro.KeyTapSequenceStep.packed_keys max_size:64
+cormoran.runtime_macro.ErrorResponse.message   max_size:96
+cormoran.runtime_macro.StatusResponse.message  max_size:96
+cormoran.runtime_macro.ListMacrosResponse.macros max_count:16

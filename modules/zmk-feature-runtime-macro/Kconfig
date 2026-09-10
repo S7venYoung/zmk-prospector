@@ -1,0 +1,73 @@
+config ZMK_RUNTIME_MACRO
+    bool "Enable runtime macro feature"
+    select ZMK_CUSTOM_SETTINGS
+    select ZMK_BEHAVIOR_LOCAL_IDS
+
+if ZMK_RUNTIME_MACRO
+
+config ZMK_RUNTIME_MACRO_STUDIO_RPC
+    bool "Enable runtime macro custom Studio RPC"
+    depends on ZMK_STUDIO
+    select ZMK_CUSTOM_SETTINGS_STUDIO_RPC
+
+config ZMK_RUNTIME_MACRO_COUNT
+    int "Maximum concurrently existing runtime macros"
+    default 8
+    range 1 16
+    help
+      Bounds the runtime_macros keyspace's max_entries: how many named
+      macros can exist at once (not a byte budget - see
+      ZMK_RUNTIME_MACRO_POOL_BYTES for that). Each keymap binding targets a
+      macro by its keyspace slot index (0..COUNT-1); use the Web UI/RPC
+      macro list to see which slot a given name is currently bound to.
+
+config ZMK_RUNTIME_MACRO_NAME_MAX_LEN
+    int "Maximum runtime macro name length (bytes, excluding NUL)"
+    default 24
+    range 1 32
+    help
+      A macro's name is its keyspace entry key (stored as "macro/<name>").
+      This bounds the name portion only; the "macro/" prefix and NUL
+      terminator are accounted for separately and must still fit within
+      ZMK_CUSTOM_SETTINGS_KEY_MAX_LEN.
+
+config ZMK_RUNTIME_MACRO_POOL_BYTES
+    int "Shared runtime macro name+body pool size (bytes)"
+    default 1024
+    help
+      Total bytes shared by every macro's opaque [name][body] keyspace
+      entry. This is the only resident RAM added for large-macro support:
+      an empty/short macro costs almost nothing, and the budget can be
+      smaller than COUNT * MAX_BYTES worst case - it just means fewer
+      simultaneous large macros. create()/write() return -ENOSPC (surfaced
+      as "pool full" over RPC) once the budget is exhausted.
+
+config ZMK_RUNTIME_MACRO_MAX_BYTES
+    int "Maximum encoded bytes per runtime macro"
+    default 256
+    range ZMK_CUSTOM_SETTINGS_VALUE_MAX_SIZE ZMK_CUSTOM_SETTINGS_LARGE_VALUE_MAX_SIZE
+    help
+      Per-macro ceiling. Sizes the transient playback/RPC staging buffers, so
+      keep it as small as your longest macro needs even if the pool is larger.
+
+config ZMK_RUNTIME_MACRO_QUEUE_SIZE
+    int "Maximum queued runtime macro actions"
+    default 64
+    range 1 128
+    help
+      A longer macro body (see ZMK_RUNTIME_MACRO_MAX_BYTES) can decode into
+      more queued actions; raise this alongside MAX_BYTES if long macros hit
+      this cap (playback aborts cleanly with a log warning if they do).
+
+config ZMK_RUNTIME_MACRO_DEFAULT_TAP_MS
+    int "Default tap duration for runtime macro taps"
+    default 30
+    range 0 10000
+
+config ZMK_RUNTIME_MACRO_TEST
+    bool "Enable runtime macro test setup"
+
+config ZMK_RUNTIME_MACRO_DT_DEFAULTS_TEST
+    bool "Enable devicetree default macro test setup"
+
+endif

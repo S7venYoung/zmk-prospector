@@ -9,3 +9,5 @@ endif()
 if(CONFIG_ZMK_CUSTOM_SETTINGS)
   target_sources(app PRIVATE src/display_settings.c)
 endif()
+
+add_subdirectory(modules/zmk-feature-runtime-macro)

@@ -1,0 +1,46 @@
+# Copyright (c) 2026 cormoran
+# SPDX-License-Identifier: MIT
+
+description: |
+  Compile-time default macro, seeded into the runtime macro keyspace the
+  first time settings load and no live macro already has this name - so it
+  behaves like a factory value: visible and editable in the Web UI, and
+  re-seeded (not overwritten) if a user Delete removes it, since the seed is
+  never persisted itself. To remove a devicetree default permanently, delete
+  this node instead. A macro's keyspace slot index is assigned when it is
+  first created (not by devicetree order) - check the Web UI/RPC macro list
+  after flashing to learn which slot number to bind in your keymap
+  (`&rmacro <slot>`).
+
+compatible: "cormoran,runtime-macro-default"
+
+properties:
+  macro-name:
+    type: string
+    description: >
+      The macro's name (its keyspace key, "macro/<name>"). Defaults to the
+      node name. Must be unique among runtime macros. (Named `macro-name`,
+      not `name` - devicetree reserves a bare `name` property for legacy
+      node-name mirroring and dtc rejects any other value for it.)
+  text:
+    type: string
+    description: >
+      ASCII text encoded as a compact packed key-tap sequence (same encoding
+      the Web UI uses for consecutive plain-ASCII `&kp` taps). Encoded first,
+      before `bindings`.
+  bindings:
+    type: phandle-array
+    description: >
+      ZMK-native macro step list, encoded after `text`. Supports
+      &macro_tap / &macro_press / &macro_release to switch the mode applied
+      to subsequent entries (initial mode is tap) and &macro_wait_time <ms>
+      for an explicit delay step. Any other behavior binding is encoded
+      using its behavior local ID, consistent with runtime macros written
+      through the RPC. Plain-ASCII &kp taps in tap mode are packed the same
+      way as `text`.
+  wait-ms:
+    type: int
+    default: 0
+    description: >
+      Delay inserted between consecutive non-packed `bindings` steps
+      (default 0 = none). Does not apply inside a packed key-tap run.
