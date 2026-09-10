@@ -8,7 +8,6 @@
 #include <zephyr/input/input.h>
 #include <zephyr/kernel.h>
 #include <zephyr/settings/settings.h>
-#include <zmk/display.h>
 
 #include "widgets/battery_bar.h"
 #include "widgets/layer_roller.h"
@@ -41,8 +40,7 @@ static int16_t touch_start_y;
 static bool touch_active;
 static bool hardware_gesture_handled;
 static int64_t last_gesture_time;
-static int8_t pending_direction = 1;
-static struct k_work theme_switch_work;
+static volatile int8_t pending_direction;
 static struct k_work_delayable theme_save_work;
 
 static void set_panel_style(lv_obj_t *obj, lv_color_t color) {
@@ -111,9 +109,16 @@ static void apply_theme(void) {
     }
 }
 
-static void theme_switch_work_cb(struct k_work *work) {
-    ARG_UNUSED(work);
-    int next = (int)current_theme + pending_direction;
+static void theme_timer_cb(lv_timer_t *timer) {
+    ARG_UNUSED(timer);
+    int8_t direction = pending_direction;
+
+    if (direction == 0) {
+        return;
+    }
+    pending_direction = 0;
+
+    int next = (int)current_theme + direction;
     if (next < 0) {
         next = PROSPECTOR_THEME_COUNT - 1;
     }
@@ -130,9 +135,6 @@ static void queue_theme_switch(int8_t direction) {
     }
     last_gesture_time = now;
     pending_direction = direction;
-    if (zmk_display_is_initialized()) {
-        k_work_submit_to_queue(zmk_display_work_q(), &theme_switch_work);
-    }
 }
 
 static void theme_touch_callback(struct input_event *event, void *user_data) {
@@ -186,7 +188,6 @@ lv_obj_t *__wrap_zmk_display_status_screen(void) {
     const lv_color_t charcoal = lv_color_hex(0x101411);
     const lv_color_t yellow = lv_color_hex(0xFFBF18);
 
-    k_work_init(&theme_switch_work, theme_switch_work_cb);
     k_work_init_delayable(&theme_save_work, theme_save_work_cb);
 
     lv_obj_t *screen = lv_obj_create(NULL);
@@ -230,6 +231,7 @@ lv_obj_t *__wrap_zmk_display_status_screen(void) {
     lv_obj_align(zmk_widget_battery_bar_obj(&battery_widget), LV_ALIGN_BOTTOM_MID, 0, 0);
 
     apply_theme();
+    lv_timer_create(theme_timer_cb, 50, NULL);
 
     return screen;
 }
