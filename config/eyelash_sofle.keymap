@@ -3,14 +3,14 @@
 
 #include <input/processors.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <behaviors/runtime-sensor-rotate.dtsi>
+#include <behaviors/runtime_macro.dtsi>
 #include <behaviors.dtsi>
 #include <dt-bindings/zmk/bt.h>
 #include <dt-bindings/zmk/keys.h>
 #include <dt-bindings/zmk/outputs.h>
 #include <dt-bindings/zmk/pointing.h>
 #include <dt-bindings/zmk/rgb.h>
-#include <behaviors/runtime-sensor-rotate.dtsi>
-#include <behaviors/runtime_macro.dtsi>
 
 / {
     zip_scroll_scaler: zip_scroll_scaler {
@@ -83,6 +83,7 @@
 
             // 1 tap: m
             // 2 taps: password + Enter
+
             bindings = <&kp M>, <&pwd_enter>;
 
             tapping-term-ms = <200>;
@@ -120,11 +121,8 @@
             #binding-cells = <0>;
 
             // outputs: x y 1 9 0 0 9 1 8 8 + Enter
-            bindings =
-                <&kp X>, <&kp Y>,
-                <&kp N1>, <&kp N9>, <&kp N0>, <&kp N0>,
-                <&kp N9>, <&kp N1>, <&kp N8>, <&kp N8>,
-                <&kp ENTER>;
+
+            bindings = <&kp X &kp Y &kp N1 &kp N9 &kp N0 &kp N0 &kp N9 &kp N1 &kp N8 &kp N8 &kp ENTER>;
         };
     };
 
@@ -133,11 +131,11 @@
 
         layer_0 {
             bindings = <
-&kp ESC           &kp N1                                &kp N2            &kp N3        &kp N4  &kp N5       &mmv MOVE_UP     &kp N6  &kp N7     &kp N8     &kp N9     &kp N0     &kp LEFT_BRACE
-&kp TAB           &kp Q                                 &kp W             &kp E         &kp R   &kp T        &mmv MOVE_DOWN   &kp Y   &kp U      &kp I      &kp O      &kp P      &kp BACKSPACE
-&kp LGUI          &kp A                                 &kp S             &kp D         &kp F   &kp G        &mmv MOVE_LEFT   &kp H   &kp J      &kp K      &kp L      &kp SEMI   &kp RET
-&mt LSHFT DELETE  &kp Z                                 &kp X             &kp C         &kp V   &kp B        &mmv MOVE_RIGHT  &kp N   &kp M      &kp COMMA  &kp DOT    &kp FSLH   &mt RIGHT_SHIFT RIGHT_BRACE
-&kp C_MUTE        &kp C_AC_NEXT_KEYBOARD_LAYOUT_SELECT  &kp LEFT_CONTROL  &kp LEFT_ALT  &lt 2 DEL   &kp SPACE    &mkp LCLK        &lt 1 ESC   &kp SPACE  &kp RET    &kp MINUS  &kp EQUAL
+&kp ESC           &kp N1                                &kp N2            &kp N3        &kp N4     &kp N5       &mmv MOVE_UP     &kp N6     &kp N7     &kp N8     &kp N9     &kp N0     &kp LEFT_BRACE
+&kp TAB           &kp Q                                 &kp W             &kp E         &kp R      &kp T        &mmv MOVE_DOWN   &kp Y      &kp U      &kp I      &kp O      &kp P      &kp BACKSPACE
+&kp LGUI          &kp A                                 &kp S             &kp D         &kp F      &kp G        &mmv MOVE_LEFT   &kp H      &kp J      &kp K      &kp L      &kp SEMI   &kp RET
+&mt LSHFT DELETE  &kp Z                                 &kp X             &kp C         &kp V      &kp B        &mmv MOVE_RIGHT  &kp N      &kp M      &kp COMMA  &kp DOT    &kp FSLH   &mt RIGHT_SHIFT RIGHT_BRACE
+&kp C_MUTE        &kp C_AC_NEXT_KEYBOARD_LAYOUT_SELECT  &kp LEFT_CONTROL  &kp LEFT_ALT  &lt 2 DEL  &kp SPACE    &mkp LCLK        &lt 1 ESC  &kp SPACE  &kp RET    &kp MINUS  &kp EQUAL
             >;
 
             sensor-bindings = <&rsr_vol &rsr_trans>;
@@ -159,28 +157,15 @@
 
         layer_2 {
             bindings = <
-&kp TILDE  &bt BT_SEL 0  &bt BT_SEL 1    &bt BT_SEL 2  &bt BT_SEL 3  &bt BT_SEL 4    &mkp MB1  &kp F6  &kp F7  &kp F8      &kp F9     &kp F10      &trans
-&trans     &bt BT_CLR    &bt BT_CLR_ALL  &trans        &trans        &trans          &mkp MB3  &trans  &kp END  &kp UP_ARROW     &kp HOME    &kp UNDER    &kp PLUS
-&trans     &out OUT_USB  &out OUT_BLE    &trans        &trans        &kp DELETE      &mkp MB4  &trans  &kp LEFT_ARROW  &kp DOWN_ARROW      &kp RIGHT_ARROW     &kp LBRC     &kp RBRC
-&trans     &sys_reset    &trans          &bootloader   &trans        &kp KP_ENTER    &mkp MB5  &trans  &td_m_pwd  &sys_reset  &soft_off  &bootloader  &trans
-&trans     &trans        &trans          &trans        &trans        &trans          &mkp MB2  &trans  &trans  &trans      &trans     &trans
+&kp TILDE  &bt BT_SEL 0  &bt BT_SEL 1    &bt BT_SEL 2  &bt BT_SEL 3  &bt BT_SEL 4    &mkp MB1  &kp F6  &kp F7          &kp F8          &kp F9           &kp F10      &trans
+&trans     &bt BT_CLR    &bt BT_CLR_ALL  &trans        &trans        &trans          &mkp MB3  &trans  &kp END         &kp UP_ARROW    &kp HOME         &kp UNDER    &kp PLUS
+&trans     &out OUT_USB  &out OUT_BLE    &trans        &trans        &kp DELETE      &mkp MB4  &trans  &kp LEFT_ARROW  &kp DOWN_ARROW  &kp RIGHT_ARROW  &kp LBRC     &kp RBRC
+&trans     &sys_reset    &trans          &bootloader   &trans        &kp KP_ENTER    &mkp MB5  &trans  &td_m_pwd       &sys_reset      &soft_off        &bootloader  &trans
+&trans     &trans        &trans          &trans        &trans        &trans          &mkp MB2  &trans  &trans          &trans          &trans           &trans
             >;
 
             display-name = "SYS";
             sensor-bindings = <&rsr_scroll &rsr_trans>;
-        };
-
-        layer_3 {
-            bindings = <
-&rmacro 0  &trans  &trans  &trans  &trans  &trans    &trans  &trans  &trans  &trans  &trans  &trans  &trans
-&trans  &trans  &trans  &trans  &trans  &trans    &trans  &trans  &trans  &trans  &trans  &trans  &trans
-&trans  &trans  &trans  &trans  &trans  &trans    &trans  &trans  &trans  &trans  &trans  &trans  &trans
-&trans  &trans  &trans  &trans  &trans  &trans    &trans  &trans  &trans  &trans  &trans  &trans  &trans
-&trans  &trans  &trans  &trans  &trans  &trans    &trans  &trans  &trans  &trans  &trans  &trans
-            >;
-
-            display-name = ">L3<";
-            sensor-bindings = <&rsr_scroll>;
         };
     };
 };
