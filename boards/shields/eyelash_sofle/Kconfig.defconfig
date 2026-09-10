@@ -1,7 +1,7 @@
 if SHIELD_EYELASH_SOFLE_PROSPECTOR_DONGLE
 
 config ZMK_KEYBOARD_NAME
-    default "E_Sofle-Prospector"
+    default "E_Sofle-Pro"
 
 config ZMK_SPLIT_ROLE_CENTRAL
     default y
