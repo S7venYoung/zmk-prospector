@@ -6,7 +6,6 @@
  */
 
 #include <dt-bindings/zmk/matrix_transform.h>
-#include <boards/shields/prospector_adapter/boards/xiao_ble.overlay>
 #include "eyelash_sofle-layouts.dtsi"
 
 / {
