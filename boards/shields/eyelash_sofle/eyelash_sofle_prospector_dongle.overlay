@@ -6,6 +6,7 @@
  */
 
 #include <dt-bindings/zmk/matrix_transform.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include "eyelash_sofle-layouts.dtsi"
 
 / {
@@ -19,6 +20,26 @@
         columns = <0>;
         rows = <0>;
         events = <0>;
+    };
+
+    /*
+     * The encoder is physically attached to the left peripheral.  The
+     * central still needs matching keymap-sensor metadata so Studio and the
+     * runtime-sensor-rotate RPC can enumerate sensor index 0.
+     */
+    left_encoder: encoder_left {
+        compatible = "alps,ec11";
+        label = "LEFT_ENCODER";
+        a-gpios = <&gpio1 10 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+        b-gpios = <&gpio1 14 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+        steps = <40>;
+        status = "disabled";
+    };
+
+    sensors {
+        compatible = "zmk,keymap-sensors";
+        triggers-per-rotation = <20>;
+        sensors = <&left_encoder>;
     };
 
     default_transform: keymap_transform_0 {
