@@ -28,6 +28,7 @@ enum prospector_theme {
 
 #define THEME_SETTINGS_KEY "prospector_theme/selected"
 #define SWIPE_THRESHOLD 30
+#define GESTURE_COOLDOWN_MS 400
 
 static uint8_t current_theme = PROSPECTOR_THEME_WALLE;
 static lv_obj_t *theme_screen;
@@ -38,6 +39,8 @@ static lv_obj_t *theme_title;
 static int16_t touch_start_x;
 static int16_t touch_start_y;
 static bool touch_active;
+static bool hardware_gesture_handled;
+static int64_t last_gesture_time;
 static int8_t pending_direction = 1;
 static struct k_work theme_switch_work;
 static struct k_work_delayable theme_save_work;
@@ -119,13 +122,33 @@ static void theme_switch_work_cb(struct k_work *work) {
     k_work_reschedule(&theme_save_work, K_MSEC(750));
 }
 
+static void queue_theme_switch(int8_t direction) {
+    int64_t now = k_uptime_get();
+
+    if ((now - last_gesture_time) < GESTURE_COOLDOWN_MS) {
+        return;
+    }
+    last_gesture_time = now;
+    pending_direction = direction;
+    if (zmk_display_is_initialized()) {
+        k_work_submit_to_queue(zmk_display_work_q(), &theme_switch_work);
+    }
+}
+
 static void theme_touch_callback(struct input_event *event, void *user_data) {
     ARG_UNUSED(user_data);
 
     static int16_t touch_x;
     static int16_t touch_y;
 
-    if (event->code == INPUT_ABS_X) {
+    if ((event->code == INPUT_KEY_LEFT || event->code == INPUT_KEY_UP) && event->value) {
+        hardware_gesture_handled = true;
+        queue_theme_switch(-1);
+    } else if ((event->code == INPUT_KEY_RIGHT || event->code == INPUT_KEY_DOWN) &&
+               event->value) {
+        hardware_gesture_handled = true;
+        queue_theme_switch(1);
+    } else if (event->code == INPUT_ABS_X) {
         touch_x = event->value;
     } else if (event->code == INPUT_ABS_Y) {
         touch_y = event->value;
@@ -134,6 +157,7 @@ static void theme_touch_callback(struct input_event *event, void *user_data) {
             touch_start_x = touch_x;
             touch_start_y = touch_y;
             touch_active = true;
+            hardware_gesture_handled = false;
         } else if (!event->value && touch_active) {
             int16_t dx = touch_x - touch_start_x;
             int16_t dy = touch_y - touch_start_y;
@@ -141,15 +165,16 @@ static void theme_touch_callback(struct input_event *event, void *user_data) {
             int16_t abs_dy = dy < 0 ? -dy : dy;
 
             touch_active = false;
-            if (abs_dx > SWIPE_THRESHOLD && abs_dx > abs_dy) {
-                pending_direction = dx > 0 ? 1 : -1;
-            } else if (abs_dx <= SWIPE_THRESHOLD && abs_dy <= SWIPE_THRESHOLD) {
-                pending_direction = 1;
-            } else {
+            if (hardware_gesture_handled) {
+                hardware_gesture_handled = false;
                 return;
             }
-            if (zmk_display_is_initialized()) {
-                k_work_submit_to_queue(zmk_display_work_q(), &theme_switch_work);
+            if (abs_dx > SWIPE_THRESHOLD && abs_dx > abs_dy) {
+                queue_theme_switch(dx > 0 ? 1 : -1);
+            } else if (abs_dx <= SWIPE_THRESHOLD && abs_dy <= SWIPE_THRESHOLD) {
+                queue_theme_switch(1);
+            } else {
+                return;
             }
         }
     }
