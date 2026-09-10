@@ -102,6 +102,16 @@ GitHub Actions 构建完成后，在运行记录的 Artifacts 中下载固件压
 
 编码器绑定可通过 DYA Runtime Sensor Rotate 页面修改。旧 OLED 的 `dongle_display_settings` 已完全移除。
 
+## Prospector 主题切换
+
+接收器内置四个主题：`FIELD`、`OPERATOR`、`RADII` 和 `SOFLE // CODEX`。
+
+- 轻点屏幕：切换到下一个主题。
+- 向左或向右滑动：切换到上一个或下一个主题。
+- 停止切换 750 ms 后，当前主题会保存到 NVS；重启后继续使用该主题。
+
+首次刷写默认使用 `SOFLE // CODEX`。执行接收器 Settings Reset 后也会恢复默认主题。
+
 ## 编译
 
 仓库使用 GitHub Actions 自动构建：
