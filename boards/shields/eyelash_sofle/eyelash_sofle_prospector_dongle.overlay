@@ -35,3 +35,8 @@
         >;
     };
 };
+
+/* ZMK Studio requires the physical layout to declare its transform. */
+&eyelash_sofle_layout {
+    transform = <&default_transform>;
+};
