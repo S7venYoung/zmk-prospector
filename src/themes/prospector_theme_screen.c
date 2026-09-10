@@ -161,8 +161,13 @@ static void theme_touch_callback(struct input_event *event, void *user_data) {
             touch_active = true;
             hardware_gesture_handled = false;
         } else if (!event->value && touch_active) {
-            int16_t dx = touch_x - touch_start_x;
-            int16_t dy = touch_y - touch_start_y;
+            int16_t raw_dx = touch_x - touch_start_x;
+            int16_t raw_dy = touch_y - touch_start_y;
+
+            /* Prospector rotates the 240x280 panel into a 280x240 LVGL display.
+             * Match v2.2.3: touch Y maps to display X, touch X maps to inverted Y. */
+            int16_t dx = raw_dy;
+            int16_t dy = -raw_dx;
             int16_t abs_dx = dx < 0 ? -dx : dx;
             int16_t abs_dy = dy < 0 ? -dy : dy;
 
