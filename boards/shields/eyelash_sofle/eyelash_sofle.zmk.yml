@@ -1,0 +1,16 @@
+file_format: "1"
+id: eyelash_sofle
+name: Eyelash Sofle
+url: https://github.com/a741725193/zmk-sofle-dongle
+type: shield
+requires: [pro_micro]
+features:
+  - keys
+  - display
+outputs:
+  - usb
+  - ble
+siblings:
+  - eyelash_sofle_prospector_dongle
+  - eyelash_sofle_peripheral_left
+  - eyelash_sofle_peripheral_right

@@ -1,0 +1,17 @@
+config ZMK_KEY_STATS
+    bool "Track physical key press statistics"
+    default n
+    depends on SETTINGS
+    help
+      Count only ZMK physical key position press events. Encoder sensor events and pointing
+      input events are intentionally not counted.
+
+config ZMK_KEY_STATS_SAVE_DEBOUNCE_SECONDS
+    int "Delay before saving key statistics"
+    default 30
+    depends on ZMK_KEY_STATS
+
+config ZMK_KEY_STATS_SAVE_PRESS_INTERVAL
+    int "Save key statistics every N key presses"
+    default 50
+    depends on ZMK_KEY_STATS

@@ -1,0 +1,6 @@
+if(CONFIG_ZMK_KEY_STATS)
+  zephyr_library()
+  zephyr_include_directories(include)
+  zephyr_library_include_directories(include)
+  zephyr_library_sources(src/key_stats.c)
+endif()

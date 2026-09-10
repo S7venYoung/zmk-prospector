@@ -1,0 +1,11 @@
+# Copyright (c) 2020 The ZMK Contributors
+# SPDX-License-Identifier: MIT
+
+config SHIELD_EYELASH_SOFLE_PROSPECTOR_DONGLE
+    def_bool $(shields_list_contains,eyelash_sofle_prospector_dongle)
+
+config SHIELD_EYELASH_SOFLE_PERIPHERAL_LEFT
+    def_bool $(shields_list_contains,eyelash_sofle_peripheral_left)
+
+config SHIELD_EYELASH_SOFLE_PERIPHERAL_RIGHT
+    def_bool $(shields_list_contains,eyelash_sofle_peripheral_right)
