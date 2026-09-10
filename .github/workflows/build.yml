@@ -31,7 +31,6 @@ jobs:
           if [ -n "${{ matrix.snippet }}" ]; then
             echo 'extra_west_args=-S "${{ matrix.snippet }}"' >> "$GITHUB_ENV"
           fi
-          echo 'extra_cmake_args=-DSHIELD="${{ matrix.shield }}"' >> "$GITHUB_ENV"
           echo 'artifact_name=${{ matrix.artifact-name || format('{0}-{1}-zmk', matrix.shield, matrix.board) }}' >> "$GITHUB_ENV"
       - name: Initialize dependencies
         run: |
@@ -45,7 +44,7 @@ jobs:
           patch modules/prospector-zmk-module/src/split/bluetooth/central.c patches/prospector-dya-central.patch
       - name: Build
         shell: sh -x {0}
-        run: west build -s zmk/app -d "${{ env.build_dir }}" -b "${{ matrix.board }}" ${{ env.extra_west_args }} -- -DZMK_CONFIG="$GITHUB_WORKSPACE/config" ${{ env.extra_cmake_args }} ${{ matrix.cmake-args }}
+        run: west build -s zmk/app -d "${{ env.build_dir }}" -b "${{ matrix.board }}" ${{ env.extra_west_args }} -- -DZMK_CONFIG="$GITHUB_WORKSPACE/config" -DSHIELD="${{ matrix.shield }}" ${{ matrix.cmake-args }}
       - name: Collect artifact
         run: |
           mkdir "${{ env.build_dir }}/artifacts"
