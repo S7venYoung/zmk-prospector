@@ -9,9 +9,11 @@ endif()
 add_subdirectory(modules/zmk-feature-runtime-macro)
 
 if(CONFIG_SHIELD_PROSPECTOR_ADAPTER)
-  # Zephyr 4.1 has no zephyr_link_options(); this supported helper places
-  # --wrap on the final firmware link through zephyr_interface.
-  zephyr_link_libraries(-Wl,--wrap=zmk_display_status_screen)
+  # The Prospector module also supplies this hook. Keep the application theme's
+  # definition (linked first) and print the providers in the Action log so the
+  # selected implementation can be audited.
+  zephyr_link_libraries(-Wl,--allow-multiple-definition
+                        -Wl,--trace-symbol=zmk_display_status_screen)
   target_include_directories(app PRIVATE
       ${ZEPHYR_PROSPECTOR_ZMK_MODULE_MODULE_DIR}/boards/shields/prospector_adapter/src)
   target_sources(app PRIVATE src/themes/prospector_theme_screen.c)

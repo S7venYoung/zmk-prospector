@@ -21,7 +21,7 @@ static void set_panel_style(lv_obj_t *obj, lv_color_t color) {
     lv_obj_set_style_pad_all(obj, 0, LV_PART_MAIN);
 }
 
-lv_obj_t *__wrap_zmk_display_status_screen(void) {
+lv_obj_t *zmk_display_status_screen(void) {
     const lv_color_t charcoal = lv_color_hex(0x101411);
     const lv_color_t yellow = lv_color_hex(0xFFBF18);
 
