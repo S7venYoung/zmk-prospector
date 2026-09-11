@@ -7,17 +7,22 @@
 #include <zmk/event_manager.h>
 #include <zmk/events/battery_state_changed.h>
 #include <zmk/events/layer_state_changed.h>
+#include <zmk/events/key_stats_changed.h>
 #include <zmk/events/split_central_status_changed.h>
+#include <zmk/key_stats.h>
 #include <zmk/keymap.h>
 
 static lv_obj_t *layer_value;
 static lv_obj_t *battery_value[ZMK_SPLIT_BLE_PERIPHERAL_COUNT];
 static lv_obj_t *battery_fill[ZMK_SPLIT_BLE_PERIPHERAL_COUNT];
 static lv_obj_t *connection_dot[ZMK_SPLIT_BLE_PERIPHERAL_COUNT];
+static lv_obj_t *today_value;
+static lv_obj_t *total_value;
 
 struct walle_layer_state { uint8_t index; };
 struct walle_battery_state { uint8_t source; uint8_t level; };
 struct walle_connection_state { uint8_t source; bool connected; };
+struct walle_key_stats_state { uint32_t today; uint32_t total; };
 
 static void layer_update_cb(struct walle_layer_state state) {
     const char *name = zmk_keymap_layer_name(zmk_keymap_layer_index_to_id(state.index));
@@ -34,7 +39,7 @@ ZMK_SUBSCRIPTION(walle_layer, zmk_layer_state_changed);
 static void battery_update_cb(struct walle_battery_state state) {
     if (state.source >= ARRAY_SIZE(battery_value) || battery_value[state.source] == NULL) return;
     lv_label_set_text_fmt(battery_value[state.source], "%u%%", state.level);
-    lv_obj_set_width(battery_fill[state.source], MAX(2, (int32_t)state.level * 72 / 100));
+    lv_obj_set_width(battery_fill[state.source], MAX(2, (int32_t)state.level * 68 / 100));
     lv_obj_set_style_bg_color(battery_fill[state.source],
         state.level < 20 ? lv_color_hex(0xE23B2E) : lv_color_hex(0xFFBF18), 0);
 }
@@ -63,6 +68,20 @@ ZMK_DISPLAY_WIDGET_LISTENER(walle_connection, struct walle_connection_state,
                             connection_update_cb, connection_get_state)
 ZMK_SUBSCRIPTION(walle_connection, zmk_split_central_status_changed);
 
+static void key_stats_update_cb(struct walle_key_stats_state state) {
+    if (today_value != NULL) lv_label_set_text_fmt(today_value, "%u", state.today);
+    if (total_value != NULL) lv_label_set_text_fmt(total_value, "%u", state.total);
+}
+static struct walle_key_stats_state key_stats_get_state(const zmk_event_t *eh) {
+    const struct zmk_key_stats_changed *event =
+        eh == NULL ? NULL : as_zmk_key_stats_changed(eh);
+    return event == NULL ? (struct walle_key_stats_state){zmk_key_stats_today(), zmk_key_stats_total()}
+                         : (struct walle_key_stats_state){event->today, event->total};
+}
+ZMK_DISPLAY_WIDGET_LISTENER(walle_key_stats, struct walle_key_stats_state, key_stats_update_cb,
+                            key_stats_get_state)
+ZMK_SUBSCRIPTION(walle_key_stats, zmk_key_stats_changed);
+
 static void plain(lv_obj_t *obj, uint32_t color) {
     lv_obj_remove_style_all(obj);
     lv_obj_set_style_bg_color(obj, lv_color_hex(color), 0);
@@ -89,47 +108,64 @@ static void make_eye(lv_obj_t *parent, int x) {
 }
 static void make_battery_card(lv_obj_t *screen, uint8_t source, int x, const char *side) {
     lv_obj_t *card = lv_obj_create(screen); plain(card, 0xECE7DC);
-    lv_obj_set_size(card, 108, 65); lv_obj_set_pos(card, x, 169); lv_obj_set_style_radius(card, 7, 0);
+    lv_obj_set_size(card, 84, 56); lv_obj_set_pos(card, x, 145); lv_obj_set_style_radius(card, 7, 0);
     lv_obj_t *side_label = label(card, side, LV_FONT_DEFAULT, 0x111612);
     lv_obj_set_pos(side_label, 8, 5);
     connection_dot[source] = lv_obj_create(card); plain(connection_dot[source], 0xE23B2E);
-    lv_obj_set_size(connection_dot[source], 8, 8); lv_obj_set_pos(connection_dot[source], 91, 8);
+    lv_obj_set_size(connection_dot[source], 8, 8); lv_obj_set_pos(connection_dot[source], 68, 8);
     lv_obj_set_style_radius(connection_dot[source], LV_RADIUS_CIRCLE, 0);
     battery_value[source] = label(card, "--%", &FoundryGridnikMedium_20, 0x111612);
-    lv_obj_set_pos(battery_value[source], 8, 24);
+    lv_obj_set_pos(battery_value[source], 8, 22);
     lv_obj_t *track = lv_obj_create(card); plain(track, 0xA9A59D);
-    lv_obj_set_size(track, 76, 6); lv_obj_set_pos(track, 8, 52); lv_obj_set_style_radius(track, 2, 0);
+    lv_obj_set_size(track, 68, 5); lv_obj_set_pos(track, 8, 47); lv_obj_set_style_radius(track, 2, 0);
     battery_fill[source] = lv_obj_create(card); plain(battery_fill[source], 0xFFBF18);
-    lv_obj_set_size(battery_fill[source], 2, 6); lv_obj_set_pos(battery_fill[source], 8, 52);
+    lv_obj_set_size(battery_fill[source], 2, 5); lv_obj_set_pos(battery_fill[source], 8, 47);
     lv_obj_set_style_radius(battery_fill[source], 2, 0);
 }
 
 lv_obj_t *zmk_display_status_screen(void) {
-    lv_obj_t *screen = lv_obj_create(NULL); plain(screen, 0x101411); lv_obj_set_size(screen, 240, 280);
+    lv_obj_t *screen = lv_obj_create(NULL); plain(screen, 0x101411); lv_obj_set_size(screen, 280, 240);
     lv_obj_t *header = lv_obj_create(screen); plain(header, 0xFFBF18);
-    lv_obj_set_size(header, 240, 54); lv_obj_set_pos(header, 0, 0);
-    make_eye(header, 10); make_eye(header, 55);
+    lv_obj_set_size(header, 280, 46); lv_obj_set_pos(header, 0, 0);
+    make_eye(header, 8); make_eye(header, 53);
     lv_obj_t *title = label(header, "WALL-E", &FoundryGridnikMedium_20, 0x111612);
-    lv_obj_set_pos(title, 105, 7);
+    lv_obj_set_pos(title, 101, 5);
     lv_obj_t *subtitle = label(header, "// CODEX", LV_FONT_DEFAULT, 0x111612);
-    lv_obj_set_pos(subtitle, 105, 30);
-    for (int i = 0; i < 6; i++) {
+    lv_obj_set_pos(subtitle, 102, 25);
+    for (int i = 0; i < 7; i++) {
         lv_obj_t *stripe = lv_obj_create(screen); plain(stripe, (i % 2) == 0 ? 0xFFBF18 : 0x101411);
-        lv_obj_set_size(stripe, 40, 7); lv_obj_set_pos(stripe, i * 40, 54);
+        lv_obj_set_size(stripe, 40, 7); lv_obj_set_pos(stripe, i * 40, 46);
     }
     lv_obj_t *caption = label(screen, "ACTIVE LAYER", LV_FONT_DEFAULT, 0xFFBF18);
-    lv_obj_set_pos(caption, 12, 72);
+    lv_obj_set_pos(caption, 8, 59);
     layer_value = label(screen, "BASE", &FRAC_Regular_48, 0xF3EEE5);
-    lv_obj_set_width(layer_value, 216); lv_obj_set_style_text_align(layer_value, LV_TEXT_ALIGN_CENTER, 0);
-    lv_obj_set_pos(layer_value, 12, 90);
+    lv_obj_set_width(layer_value, 180); lv_obj_set_style_text_align(layer_value, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_set_pos(layer_value, 8, 77);
     lv_obj_t *rule = lv_obj_create(screen); plain(rule, 0xFFBF18);
-    lv_obj_set_size(rule, 216, 4); lv_obj_set_pos(rule, 12, 153);
+    lv_obj_set_size(rule, 180, 4); lv_obj_set_pos(rule, 8, 133);
+
+    lv_obj_t *today_card = lv_obj_create(screen); plain(today_card, 0xFFBF18);
+    lv_obj_set_size(today_card, 84, 84); lv_obj_set_pos(today_card, 196, 53);
+    lv_obj_t *today_caption = label(today_card, "TODAY", LV_FONT_DEFAULT, 0x111612);
+    lv_obj_set_pos(today_caption, 8, 7);
+    today_value = label(today_card, "0", &FRAC_Regular_48, 0x111612);
+    lv_obj_set_width(today_value, 68); lv_obj_set_style_text_align(today_value, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_set_pos(today_value, 8, 25);
+
     if (ZMK_SPLIT_BLE_PERIPHERAL_COUNT > 0) make_battery_card(screen, 0, 8, "LEFT");
-    if (ZMK_SPLIT_BLE_PERIPHERAL_COUNT > 1) make_battery_card(screen, 1, 124, "RIGHT");
+    if (ZMK_SPLIT_BLE_PERIPHERAL_COUNT > 1) make_battery_card(screen, 1, 98, "RIGHT");
+    lv_obj_t *total_card = lv_obj_create(screen); plain(total_card, 0xC83227);
+    lv_obj_set_size(total_card, 84, 56); lv_obj_set_pos(total_card, 188, 145);
+    lv_obj_set_style_radius(total_card, 7, 0);
+    lv_obj_t *total_caption = label(total_card, "TOTAL", LV_FONT_DEFAULT, 0xF3EEE5);
+    lv_obj_set_pos(total_caption, 8, 4);
+    total_value = label(total_card, "0", &FoundryGridnikMedium_20, 0xF3EEE5);
+    lv_obj_set_width(total_value, 68); lv_obj_set_style_text_align(total_value, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_set_pos(total_value, 8, 28);
     lv_obj_t *footer = lv_obj_create(screen); plain(footer, 0x242A25);
-    lv_obj_set_size(footer, 224, 32); lv_obj_set_pos(footer, 8, 242); lv_obj_set_style_radius(footer, 7, 0);
+    lv_obj_set_size(footer, 264, 27); lv_obj_set_pos(footer, 8, 207); lv_obj_set_style_radius(footer, 7, 0);
     lv_obj_t *footer_text = label(footer, "BLE  ONLINE  //  SYNC", LV_FONT_DEFAULT, 0x58E85D);
     lv_obj_center(footer_text);
-    walle_layer_init(); walle_battery_init(); walle_connection_init();
+    walle_layer_init(); walle_battery_init(); walle_connection_init(); walle_key_stats_init();
     return screen;
 }
