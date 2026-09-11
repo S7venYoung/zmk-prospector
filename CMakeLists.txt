@@ -15,6 +15,7 @@ if(CONFIG_SHIELD_PROSPECTOR_ADAPTER)
   zephyr_link_libraries(-Wl,--allow-multiple-definition
                         -Wl,--trace-symbol=zmk_display_status_screen)
   target_include_directories(app PRIVATE
-      ${ZEPHYR_PROSPECTOR_ZMK_MODULE_MODULE_DIR}/boards/shields/prospector_adapter/src)
+      ${ZEPHYR_PROSPECTOR_ZMK_MODULE_MODULE_DIR}/boards/shields/prospector_adapter/src
+      ${ZEPHYR_PROSPECTOR_ZMK_MODULE_MODULE_DIR}/boards/shields/prospector_adapter/include)
   target_sources(app PRIVATE src/themes/prospector_theme_screen.c)
 endif()
