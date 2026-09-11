@@ -16,6 +16,8 @@ manifest:
       url-base: https://github.com/carrefinho
     - name: englmaxi
       url-base: https://github.com/englmaxi
+    - name: s7venyoung
+      url-base: https://github.com/S7venYoung
   projects:
     - name: mario-peripheral-animation
       remote: gpeye
@@ -78,5 +80,10 @@ manifest:
     - name: prospector-zmk-module
       remote: carrefinho
       revision: core/zephyr-4-1
+    - name: zmk-prospector-themes
+      remote: s7venyoung
+      repo-path: zmk-prospector
+      revision: prospector-themes
+      path: modules/zmk-prospector-themes
   self:
     path: config

@@ -1,7 +1,7 @@
 ---
 include:
   - board: xiao_ble//zmk
-    shield: eyelash_sofle_prospector_dongle prospector_adapter
+    shield: eyelash_sofle_prospector_dongle prospector_adapter prospector_theme_walle
     snippet: studio-rpc-usb-uart
     cmake-args: -DCONFIG_ZMK_STUDIO=y -DCONFIG_ZMK_STUDIO_LOCKING=n
     artifact-name: eyelash_sofle_prospector_dongle
