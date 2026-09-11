@@ -102,23 +102,10 @@ GitHub Actions 构建完成后，在运行记录的 Artifacts 中下载固件压
 
 编码器绑定可通过 DYA Runtime Sensor Rotate 页面修改。旧 OLED 的 `dongle_display_settings` 已完全移除。
 
-## Prospector 主题切换
+## WALL-E 主题分支
 
-接收器内置四个主题：`FIELD`、`OPERATOR`、`RADII` 和 `SOFLE // CODEX`。
-
-- 轻点屏幕：切换到下一个主题。
-- 向左或向右滑动：切换到上一个或下一个主题（坐标按旋转后的屏幕方向处理）。
-- 停止切换 750 ms 后，当前主题会保存到 NVS；重启后继续使用该主题。
-
-首次刷写默认使用 `SOFLE // CODEX`。执行接收器 Settings Reset 后也会恢复默认主题。
-
-触摸屏需要在显示接线之外连接四根触摸信号线：`TP_SDA → D4`、`TP_SCL → D5`、
-`TP_INT → D0`、`TP_RST → D1`。仅使用带触摸面板的 LCD、但未连接这四根线时，
-屏幕可以正常显示，但无法切换主题。
-
-显示线程采用 Prospector v2.2.3 的稳定性参数：8 KB 显示栈和 48 KB LVGL 内存池。
-Scanner 专属的数据表锁和看门狗不用于本 Dongle Central；触摸回调只写入待处理手势，
-所有 LVGL 修改均由显示线程执行。
+`theme/walle-codex` 固定编译 `SOFLE // CODEX` WALL-E 主题，不启用触摸或运行时主题切换。
+显示线程保留 Prospector v2.2.3 的稳定性参数：8 KB 显示栈和 48 KB LVGL 内存池。
 
 ## 编译
 

@@ -14,21 +14,6 @@
 &spi2 { status = "disabled"; };
 
 &pinctrl {
-    prospector_i2c0_default: prospector_i2c0_default {
-        group1 {
-            psels = <NRF_PSEL(TWIM_SDA, 0, 4)>,
-                    <NRF_PSEL(TWIM_SCL, 0, 5)>;
-        };
-    };
-
-    prospector_i2c0_sleep: prospector_i2c0_sleep {
-        group1 {
-            psels = <NRF_PSEL(TWIM_SDA, 0, 4)>,
-                    <NRF_PSEL(TWIM_SCL, 0, 5)>;
-            low-power-enable;
-        };
-    };
-
     spi3_default: spi3_default {
         group1 {
             psels = <NRF_PSEL(SPIM_SCK, 1, 13)>,
@@ -58,23 +43,6 @@
             psels = <NRF_PSEL(PWM_OUT0, 1, 11)>;
             low-power-enable;
         };
-    };
-};
-
-&i2c0 {
-    status = "okay";
-    compatible = "nordic,nrf-twim";
-    pinctrl-0 = <&prospector_i2c0_default>;
-    pinctrl-1 = <&prospector_i2c0_sleep>;
-    pinctrl-names = "default", "sleep";
-    clock-frequency = <100000>;
-
-    touch_sensor: cst816s@15 {
-        compatible = "hynitron,cst816s";
-        reg = <0x15>;
-        status = "okay";
-        irq-gpios = <&xiao_d 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-        rst-gpios = <&xiao_d 1 GPIO_ACTIVE_LOW>;
     };
 };
 
