@@ -29,6 +29,7 @@ enum prospector_theme {
 #define THEME_SETTINGS_KEY "prospector_theme/selected"
 #define SWIPE_THRESHOLD 30
 #define GESTURE_COOLDOWN_MS 400
+#define TOUCH_FALLBACK_MS 350
 
 static uint8_t current_theme = PROSPECTOR_THEME_WALLE;
 static lv_obj_t *theme_screen;
@@ -42,7 +43,11 @@ static bool touch_active;
 static bool hardware_gesture_handled;
 static int64_t last_gesture_time;
 static volatile int8_t pending_direction;
+static volatile bool touch_fallback_pending;
+static volatile uint32_t touch_fallback_deadline;
 static struct k_work_delayable theme_save_work;
+
+static void queue_theme_switch(int8_t direction);
 
 static void set_panel_style(lv_obj_t *obj, lv_color_t color) {
     lv_obj_set_style_bg_color(obj, color, LV_PART_MAIN);
@@ -112,6 +117,13 @@ static void apply_theme(void) {
 
 static void theme_timer_cb(lv_timer_t *timer) {
     ARG_UNUSED(timer);
+
+    if (touch_fallback_pending &&
+        (int32_t)(k_uptime_get_32() - touch_fallback_deadline) >= 0) {
+        touch_fallback_pending = false;
+        queue_theme_switch(1);
+    }
+
     int8_t direction = pending_direction;
 
     if (direction == 0) {
@@ -146,6 +158,7 @@ static void theme_touch_callback(struct input_event *event, void *user_data) {
 
     if (event->type == INPUT_EV_DEVICE) {
         hardware_gesture_handled = true;
+        touch_fallback_pending = false;
         switch (event->code) {
         case CST816S_GESTURE_CODE_SWIPE_LEFT:
         case CST816S_GESTURE_CODE_SWIPE_UP:
@@ -160,16 +173,18 @@ static void theme_touch_callback(struct input_event *event, void *user_data) {
         default:
             break;
         }
-    } else if (event->code == INPUT_ABS_X) {
+    } else if (event->type == INPUT_EV_ABS && event->code == INPUT_ABS_X) {
         touch_x = event->value;
-    } else if (event->code == INPUT_ABS_Y) {
+    } else if (event->type == INPUT_EV_ABS && event->code == INPUT_ABS_Y) {
         touch_y = event->value;
-    } else if (event->code == INPUT_BTN_TOUCH) {
+    } else if (event->type == INPUT_EV_KEY && event->code == INPUT_BTN_TOUCH) {
         if (event->value && !touch_active) {
             touch_start_x = touch_x;
             touch_start_y = touch_y;
             touch_active = true;
             hardware_gesture_handled = false;
+            touch_fallback_deadline = k_uptime_get_32() + TOUCH_FALLBACK_MS;
+            touch_fallback_pending = true;
         } else if (!event->value && touch_active) {
             int16_t raw_dx = touch_x - touch_start_x;
             int16_t raw_dy = touch_y - touch_start_y;
@@ -182,6 +197,7 @@ static void theme_touch_callback(struct input_event *event, void *user_data) {
             int16_t abs_dy = dy < 0 ? -dy : dy;
 
             touch_active = false;
+            touch_fallback_pending = false;
             if (hardware_gesture_handled) {
                 hardware_gesture_handled = false;
                 return;
