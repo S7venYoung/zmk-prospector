@@ -2,6 +2,7 @@
 #include <lvgl.h>
 #include <zephyr/sys/util.h>
 #include <fonts.h>
+#include <zmk/ble.h>
 #include <zmk/display.h>
 #include <zmk/event_manager.h>
 #include <zmk/events/battery_state_changed.h>
