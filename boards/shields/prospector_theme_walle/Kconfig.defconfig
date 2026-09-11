@@ -1,0 +1,6 @@
+if SHIELD_PROSPECTOR_THEME_WALLE
+
+config ZMK_PROSPECTOR_THEME_WALLE
+    default y
+
+endif

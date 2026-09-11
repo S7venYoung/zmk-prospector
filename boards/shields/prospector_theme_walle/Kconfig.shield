@@ -1,0 +1,2 @@
+config SHIELD_PROSPECTOR_THEME_WALLE
+    def_bool $(shields_list_contains,prospector_theme_walle)

@@ -1,0 +1,6 @@
+name: zmk-prospector-themes
+build:
+  cmake: .
+  kconfig: Kconfig
+  settings:
+    board_root: .
