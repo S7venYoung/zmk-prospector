@@ -64,9 +64,10 @@ async function sync() {
 button.addEventListener("click", async () => {
   button.disabled = true;
   status.textContent = "正在连接…";
+  let transport;
   try {
     status.textContent = "请选择 Prospector 接收器…";
-    const transport = await withTimeout(connect(), "串口连接");
+    transport = await withTimeout(connect(), "串口连接");
     connection = create_rpc_connection(transport);
     const listed = await withTimeout(
       call_rpc(connection, { custom: { listCustomSubsystems: {} } }),
@@ -80,7 +81,15 @@ button.addEventListener("click", async () => {
     timer = setInterval(() => sync().catch((error) => status.textContent = error.message), 30000);
     button.textContent = "已连接";
   } catch (error) {
-    status.textContent = error?.message || String(error);
+    if (transport?.abortController) {
+      try { transport.abortController.abort(error); } catch {}
+    }
+    connection = undefined;
+    subsystemIndex = undefined;
+    const message = error?.message || String(error);
+    status.textContent = /already open|in use|占用/i.test(message)
+      ? "串口已被占用，请退出 DYA 和其他 Prospector Codex 实例后重试"
+      : message;
     button.disabled = false;
   }
 });
