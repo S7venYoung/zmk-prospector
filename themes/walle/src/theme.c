@@ -9,6 +9,7 @@
 #include <zmk/events/position_state_changed.h>
 #include <zmk/events/split_central_status_changed.h>
 #include <zmk/keymap.h>
+#include <prospector_touch.h>
 
 LV_FONT_DECLARE(impact_16);
 LV_FONT_DECLARE(impact_20);
@@ -137,5 +138,6 @@ lv_obj_t *zmk_display_status_screen(void) {
     lv_obj_t *ble = text(footer, "BLE", &impact_20, PAPER); lv_obj_set_pos(ble, 91, 3);
     (void)box(footer, 135, 7, 10, 10, GREEN, LV_RADIUS_CIRCLE); (void)box(footer, 154, 7, 10, 10, GREEN, LV_RADIUS_CIRCLE);
     theme_walle_layer_init(); theme_walle_battery_init(); theme_walle_connection_init(); theme_walle_wpm_init();
+    prospector_touch_attach(s);
     return s;
 }

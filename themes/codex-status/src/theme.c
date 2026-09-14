@@ -13,6 +13,7 @@
 #include <zmk/keymap.h>
 #include <zmk/codex_metrics.h>
 #include <zmk/events/codex_metrics_changed.h>
+#include <prospector_touch.h>
 
 LV_FONT_DECLARE(impact_16);
 LV_FONT_DECLARE(impact_20);
@@ -264,5 +265,6 @@ lv_obj_t *zmk_display_status_screen(void) {
     codex_status_connection_init();
     codex_status_wpm_init();
     codex_status_metrics_init();
+    prospector_touch_attach(screen);
     return screen;
 }
