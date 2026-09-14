@@ -1,4 +1,7 @@
-/* WALL-E / Codex theme for the rotated 280x240 Prospector display. */
+/* WALL-E / Codex theme for the rotated 280x240 Prospector display.
+ * The physical panel has 4 x R5 mm corners (~43 px radius), so foreground
+ * content stays inside a rounded-corner safe area while backgrounds bleed out.
+ */
 #include <lvgl.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
@@ -123,11 +126,13 @@ static void battery_card(lv_obj_t *s, uint8_t source, int x, const char *side) {
 lv_obj_t *zmk_display_status_screen(void) {
     lv_obj_t *s = lv_obj_create(NULL); plain(s, 0x101411); lv_obj_set_size(s, 280, 240);
     lv_obj_t *h = lv_obj_create(s); plain(h, 0xFFBF18); lv_obj_set_size(h, 280, 40);
-    eye(h, 7); eye(h, 41);
+    /* At y=7 the R43 corner removes roughly the first/last 20 pixels. */
+    eye(h, 20); eye(h, 54);
     lv_obj_t *title = text(h, "SOFLE // CODEX", &FoundryGridnikMedium_20, 0x111612);
-    lv_obj_set_pos(title, 78, 8);
-    lv_obj_t *usb = lv_obj_create(h); plain(usb, 0xFFBF18); lv_obj_set_size(usb, 55, 28);
-    lv_obj_set_pos(usb, 218, 6); lv_obj_set_style_border_width(usb, 3, 0);
+    lv_obj_set_pos(title, 90, 8);
+    lv_obj_t *usb = lv_obj_create(h); plain(usb, 0xFFBF18);
+    lv_obj_set_size(usb, 47, 28); lv_obj_set_pos(usb, 211, 6);
+    lv_obj_set_style_border_width(usb, 3, 0);
     lv_obj_set_style_border_color(usb, lv_color_hex(0x111612), 0); lv_obj_set_style_radius(usb, 5, 0);
     lv_obj_t *usb_text = text(usb, "USB", LV_FONT_DEFAULT, 0x111612); lv_obj_center(usb_text);
     for (int i = 0; i < 7; i++) { lv_obj_t *m = lv_obj_create(s); plain(m, i % 2 ? 0x101411 : 0xFFBF18);
@@ -139,9 +144,10 @@ lv_obj_t *zmk_display_status_screen(void) {
     lv_obj_t *wpm = text(s, "WPM", &FoundryGridnikMedium_20, 0xF3EEE5); lv_obj_set_pos(wpm, 160, 108);
     if (ZMK_SPLIT_BLE_PERIPHERAL_COUNT > 0) battery_card(s, 0, 5, "L");
     if (ZMK_SPLIT_BLE_PERIPHERAL_COUNT > 1) battery_card(s, 1, 143, "R");
-    lv_obj_t *f = lv_obj_create(s); plain(f, 0x242A25); lv_obj_set_size(f, 270, 31);
-    lv_obj_set_pos(f, 5, 204); lv_obj_set_style_radius(f, 8, 0);
-    lv_obj_t *status = text(f, "<     BLE      SYNC     >", &FoundryGridnikMedium_20, 0xF3EEE5);
+    /* Bottom five rows need about 23 px horizontal inset for the R43 mask. */
+    lv_obj_t *f = lv_obj_create(s); plain(f, 0x242A25); lv_obj_set_size(f, 244, 31);
+    lv_obj_set_pos(f, 18, 204); lv_obj_set_style_radius(f, 10, 0);
+    lv_obj_t *status = text(f, "<    BLE    SYNC    >", &FoundryGridnikMedium_20, 0xF3EEE5);
     lv_obj_center(status);
     theme_walle_layer_init(); theme_walle_battery_init();
     theme_walle_connection_init(); theme_walle_wpm_init();

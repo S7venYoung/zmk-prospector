@@ -29,3 +29,9 @@ shield: eyelash_sofle_prospector_dongle prospector_adapter prospector_theme_wall
 ```
 
 Remove `prospector_theme_walle` to build the receiver with its normal display.
+
+## Display geometry
+
+The Waveshare panel is 240x280 physically and becomes a 280x240 LVGL canvas after rotation.
+Its four display corners are R5 mm (about 43 pixels at 0.11655 mm/pixel). Themes may paint
+backgrounds to the canvas edge, but foreground content must respect the rounded-corner safe area.
