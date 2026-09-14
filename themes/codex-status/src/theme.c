@@ -11,6 +11,8 @@
 #include <zmk/events/position_state_changed.h>
 #include <zmk/events/split_central_status_changed.h>
 #include <zmk/keymap.h>
+#include <zmk/codex_metrics.h>
+#include <zmk/events/codex_metrics_changed.h>
 
 #define INK 0x101411
 #define YELLOW 0xFFBF18
@@ -29,6 +31,40 @@ struct layer_state { uint8_t index; };
 struct battery_state { uint8_t source, level; };
 struct connection_state { uint8_t source; bool connected; };
 struct wpm_state { uint16_t wpm; };
+
+static void format_tokens(char *buffer, size_t size, uint64_t tokens) {
+    if (tokens >= 1000000) {
+        snprintk(buffer, size, "%llu.%lluM", (unsigned long long)(tokens / 1000000),
+                 (unsigned long long)((tokens % 1000000) / 100000));
+    } else if (tokens >= 1000) {
+        snprintk(buffer, size, "%llu.%lluK", (unsigned long long)(tokens / 1000),
+                 (unsigned long long)((tokens % 1000) / 100));
+    } else {
+        snprintk(buffer, size, "%llu", (unsigned long long)tokens);
+    }
+}
+
+static void metrics_update(struct zmk_codex_metrics_changed state) {
+    if (!codex_used_value || !codex_tokens_value) return;
+    if (state.updated_at == 0) {
+        lv_label_set_text(codex_used_value, "--%");
+        lv_label_set_text(codex_tokens_value, "--");
+        return;
+    }
+    lv_label_set_text_fmt(codex_used_value, "%u%%", state.five_hour_used_percent);
+    char tokens[16];
+    format_tokens(tokens, sizeof(tokens), state.today_total_tokens);
+    lv_label_set_text(codex_tokens_value, tokens);
+}
+static struct zmk_codex_metrics_changed metrics_get(const zmk_event_t *eh) {
+    if (eh) return *as_zmk_codex_metrics_changed(eh);
+    struct zmk_codex_metrics current = zmk_codex_metrics_get();
+    return (struct zmk_codex_metrics_changed){current.five_hour_used_percent,
+                                              current.today_total_tokens, current.updated_at};
+}
+ZMK_DISPLAY_WIDGET_LISTENER(codex_status_metrics, struct zmk_codex_metrics_changed,
+                            metrics_update, metrics_get)
+ZMK_SUBSCRIPTION(codex_status_metrics, zmk_codex_metrics_changed);
 
 static void plain(lv_obj_t *o, uint32_t color) {
     lv_obj_remove_style_all(o);
@@ -202,5 +238,6 @@ lv_obj_t *zmk_display_status_screen(void) {
     codex_status_battery_init();
     codex_status_connection_init();
     codex_status_wpm_init();
+    codex_status_metrics_init();
     return screen;
 }

@@ -9,4 +9,5 @@ battery and split connection state. Codex is intentionally limited to those two 
 Select it by adding `prospector_theme_codex_status` to the receiver's shield list. Do not select it
 together with another Prospector theme.
 
-Until the macOS bridge is connected, Codex values display as `--%` and `--`.
+The receiver exposes the unsecured `s7venyoung__codex_metrics` Studio custom subsystem. Values are
+kept in RAM and refreshed by the standalone macOS bridge; nothing is written to NVS.

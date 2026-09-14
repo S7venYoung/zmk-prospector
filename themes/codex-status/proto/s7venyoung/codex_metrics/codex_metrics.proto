@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package s7venyoung.codex_metrics;
+
+message Metrics {
+  uint32 five_hour_used_percent = 1;
+  uint64 today_total_tokens = 2;
+  uint64 updated_at = 3;
+}
+
+message SetMetricsRequest { Metrics metrics = 1; }
+message GetMetricsRequest {}
+
+message Request {
+  oneof request_type {
+    SetMetricsRequest set_metrics = 1;
+    GetMetricsRequest get_metrics = 2;
+  }
+}
+
+message StatusResponse { bool ok = 1; }
+
+message Response {
+  oneof response_type {
+    StatusResponse status = 1;
+    Metrics metrics = 2;
+  }
+}

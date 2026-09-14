@@ -1,4 +1,4 @@
 config ZMK_PROSPECTOR_THEME_CODEX_STATUS
     bool "Codex keyboard status theme"
-    depends on ZMK_DISPLAY
+    depends on ZMK_DISPLAY && ZMK_STUDIO
     default n
