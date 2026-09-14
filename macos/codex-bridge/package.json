@@ -7,13 +7,33 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
-    "start": "electron ."
+    "start": "electron .",
+    "dist:mac": "pnpm build && electron-builder --mac dmg zip --arm64"
   },
   "dependencies": {
     "@zmkfirmware/zmk-studio-ts-client": "file:vendor/zmk-studio-ts-client"
   },
   "devDependencies": {
     "electron": "^38.0.0",
+    "electron-builder": "^26.15.3",
     "vite": "^7.1.0"
+  },
+  "build": {
+    "appId": "dev.s7venyoung.prospector-codex",
+    "productName": "Prospector Codex",
+    "asar": true,
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "mac": {
+      "category": "public.app-category.utilities",
+      "target": ["dmg", "zip"]
+    },
+    "artifactName": "${productName}-${version}-${arch}.${ext}"
   }
 }
