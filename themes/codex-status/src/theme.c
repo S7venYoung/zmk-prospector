@@ -150,29 +150,45 @@ ZMK_SUBSCRIPTION(codex_status_wpm, zmk_position_state_changed);
 
 static void battery_card(lv_obj_t *screen, uint8_t source, int x, const char *side) {
     lv_obj_t *card = lv_obj_create(screen);
-    plain(card, PAPER);
-    lv_obj_set_size(card, 112, 29);
-    lv_obj_set_pos(card, x, 205);
-    lv_obj_set_style_radius(card, 6, 0);
-    lv_obj_t *side_label = text(card, side, LV_FONT_DEFAULT, INK);
-    lv_obj_set_pos(side_label, 7, 6);
-    battery_value[source] = text(card, "--%", &FoundryGridnikMedium_20, INK);
-    lv_obj_set_pos(battery_value[source], 25, 1);
+    plain(card, INK);
+    lv_obj_set_size(card, 132, 38);
+    lv_obj_set_pos(card, x, 194);
+    lv_obj_set_style_radius(card, 10, 0);
+    lv_obj_set_style_border_width(card, 1, 0);
+    lv_obj_set_style_border_color(card, lv_color_hex(MUTED), 0);
+    lv_obj_t *side_label = text(card, side, &FoundryGridnikMedium_20, MUTED);
+    lv_obj_set_pos(side_label, 9, 7);
+    battery_value[source] = text(card, "--%", &FoundryGridnikMedium_20, PAPER);
+    lv_obj_set_pos(battery_value[source], 29, 6);
     connection_dot[source] = lv_obj_create(card);
-    plain(connection_dot[source], RED);
-    lv_obj_set_size(connection_dot[source], 8, 8);
-    lv_obj_set_pos(connection_dot[source], 96, 6);
+    plain(connection_dot[source], GREEN);
+    lv_obj_set_size(connection_dot[source], 10, 10);
+    lv_obj_set_pos(connection_dot[source], 116, 13);
     lv_obj_set_style_radius(connection_dot[source], LV_RADIUS_CIRCLE, 0);
     lv_obj_t *track = lv_obj_create(card);
-    plain(track, 0xA9A59D);
-    lv_obj_set_size(track, 40, 4);
-    lv_obj_set_pos(track, 64, 19);
-    lv_obj_set_style_radius(track, 2, 0);
+    plain(track, PAPER);
+    lv_obj_set_size(track, 38, 13);
+    lv_obj_set_pos(track, 66, 12);
+    lv_obj_set_style_radius(track, 3, 0);
+    lv_obj_set_style_border_width(track, 1, 0);
+    lv_obj_set_style_border_color(track, lv_color_hex(PAPER), 0);
     battery_fill[source] = lv_obj_create(card);
     plain(battery_fill[source], GREEN);
-    lv_obj_set_size(battery_fill[source], 2, 4);
-    lv_obj_set_pos(battery_fill[source], 64, 19);
+    lv_obj_set_size(battery_fill[source], 4, 9);
+    lv_obj_set_pos(battery_fill[source], 68, 14);
     lv_obj_set_style_radius(battery_fill[source], 2, 0);
+}
+
+static lv_obj_t *panel(lv_obj_t *screen, int x, int y, int w, int h, uint32_t color,
+                       uint32_t border, int radius) {
+    lv_obj_t *o = lv_obj_create(screen);
+    plain(o, color);
+    lv_obj_set_size(o, w, h);
+    lv_obj_set_pos(o, x, y);
+    lv_obj_set_style_radius(o, radius, 0);
+    lv_obj_set_style_border_width(o, 1, 0);
+    lv_obj_set_style_border_color(o, lv_color_hex(border), 0);
+    return o;
 }
 
 lv_obj_t *zmk_display_status_screen(void) {
@@ -180,55 +196,55 @@ lv_obj_t *zmk_display_status_screen(void) {
     plain(screen, INK);
     lv_obj_set_size(screen, 280, 240);
 
-    lv_obj_t *header = lv_obj_create(screen);
-    plain(header, YELLOW);
-    lv_obj_set_size(header, 280, 39);
-    lv_obj_t *brand = text(header, "CODEX // SOFLE", &FoundryGridnikMedium_20, INK);
-    lv_obj_set_pos(brand, 25, 7);
-    lv_obj_t *usb = lv_obj_create(header);
-    plain(usb, YELLOW);
-    lv_obj_set_size(usb, 48, 25);
-    lv_obj_set_pos(usb, 210, 7);
-    lv_obj_set_style_border_width(usb, 2, 0);
-    lv_obj_set_style_border_color(usb, lv_color_hex(INK), 0);
-    lv_obj_set_style_radius(usb, 5, 0);
-    lv_obj_t *usb_label = text(usb, "USB", LV_FONT_DEFAULT, INK);
-    lv_obj_center(usb_label);
+    lv_obj_t *brand = text(screen, "CODEX // SOFLE", &FoundryGridnikMedium_20, PAPER);
+    lv_obj_set_pos(brand, 14, 8);
+    lv_obj_t *usb = text(screen, "USB", &FoundryGridnikMedium_20, PAPER);
+    lv_obj_set_pos(usb, 231, 8);
+    lv_obj_t *usb_dot = lv_obj_create(screen);
+    plain(usb_dot, GREEN);
+    lv_obj_set_size(usb_dot, 10, 10);
+    lv_obj_set_pos(usb_dot, 264, 14);
+    lv_obj_set_style_radius(usb_dot, LV_RADIUS_CIRCLE, 0);
+    lv_obj_t *header_rule = lv_obj_create(screen);
+    plain(header_rule, YELLOW);
+    lv_obj_set_size(header_rule, 252, 2);
+    lv_obj_set_pos(header_rule, 14, 37);
 
-    lv_obj_t *used_caption = text(screen, "5 HOUR USED", LV_FONT_DEFAULT, YELLOW);
-    lv_obj_set_pos(used_caption, 24, 47);
-    codex_used_value = text(screen, "--%", &FRAC_Regular_48, PAPER);
-    lv_obj_set_pos(codex_used_value, 18, 58);
-    lv_obj_set_width(codex_used_value, 244);
+    lv_obj_t *used_card = panel(screen, 6, 48, 132, 91, INK, YELLOW, 10);
+    lv_obj_t *used_caption = text(used_card, "5 HOUR USED", LV_FONT_DEFAULT, PAPER);
+    lv_obj_set_pos(used_caption, 9, 9);
+    lv_obj_t *used_marks = text(used_card, "///", LV_FONT_DEFAULT, YELLOW);
+    lv_obj_set_pos(used_marks, 105, 9);
+    codex_used_value = text(used_card, "--%", &FRAC_Regular_48, YELLOW);
+    lv_obj_set_pos(codex_used_value, 7, 34);
+    lv_obj_set_width(codex_used_value, 118);
     lv_obj_set_style_text_align(codex_used_value, LV_TEXT_ALIGN_CENTER, 0);
 
-    lv_obj_t *divider = lv_obj_create(screen);
-    plain(divider, YELLOW);
-    lv_obj_set_size(divider, 238, 3);
-    lv_obj_set_pos(divider, 21, 111);
-
-    lv_obj_t *token_caption = text(screen, "TODAY TOTAL TOKEN", LV_FONT_DEFAULT, MUTED);
-    lv_obj_set_pos(token_caption, 24, 119);
-    codex_tokens_value = text(screen, "--", &FRAC_Regular_48, YELLOW);
-    lv_obj_set_pos(codex_tokens_value, 18, 130);
-    lv_obj_set_width(codex_tokens_value, 244);
+    lv_obj_t *token_card = panel(screen, 142, 48, 132, 91, INK, YELLOW, 10);
+    lv_obj_t *token_caption = text(token_card, "TODAY TOTAL TOKEN", LV_FONT_DEFAULT, PAPER);
+    lv_obj_set_pos(token_caption, 8, 9);
+    lv_obj_t *token_marks = text(token_card, "///", LV_FONT_DEFAULT, YELLOW);
+    lv_obj_set_pos(token_marks, 105, 9);
+    codex_tokens_value = text(token_card, "--", &FRAC_Regular_48, PAPER);
+    lv_obj_set_pos(codex_tokens_value, 5, 34);
+    lv_obj_set_width(codex_tokens_value, 122);
     lv_obj_set_style_text_align(codex_tokens_value, LV_TEXT_ALIGN_CENTER, 0);
 
-    lv_obj_t *keyboard_bar = lv_obj_create(screen);
-    plain(keyboard_bar, 0x242A25);
-    lv_obj_set_size(keyboard_bar, 244, 30);
-    lv_obj_set_pos(keyboard_bar, 18, 172);
-    lv_obj_set_style_radius(keyboard_bar, 7, 0);
+    lv_obj_t *keyboard_bar = panel(screen, 7, 147, 266, 35, INK, MUTED, 8);
     lv_obj_t *layer_caption = text(keyboard_bar, "LAYER", LV_FONT_DEFAULT, MUTED);
-    lv_obj_set_pos(layer_caption, 8, 7);
-    layer_value = text(keyboard_bar, "BASE", &FoundryGridnikMedium_20, PAPER);
-    lv_obj_set_pos(layer_value, 52, 2);
-    lv_obj_set_width(layer_value, 105);
+    lv_obj_set_pos(layer_caption, 12, 9);
+    layer_value = text(keyboard_bar, "BASE", &FoundryGridnikMedium_20, YELLOW);
+    lv_obj_set_pos(layer_value, 66, 4);
+    lv_obj_set_width(layer_value, 65);
+    lv_obj_t *bar_divider = lv_obj_create(keyboard_bar);
+    plain(bar_divider, MUTED);
+    lv_obj_set_size(bar_divider, 1, 22);
+    lv_obj_set_pos(bar_divider, 145, 6);
     lv_obj_t *wpm_caption = text(keyboard_bar, "WPM", LV_FONT_DEFAULT, MUTED);
-    lv_obj_set_pos(wpm_caption, 164, 7);
+    lv_obj_set_pos(wpm_caption, 174, 9);
     wpm_value = text(keyboard_bar, "0", &FoundryGridnikMedium_20, YELLOW);
-    lv_obj_set_pos(wpm_value, 205, 2);
-    lv_obj_set_width(wpm_value, 31);
+    lv_obj_set_pos(wpm_value, 224, 4);
+    lv_obj_set_width(wpm_value, 30);
     lv_obj_set_style_text_align(wpm_value, LV_TEXT_ALIGN_RIGHT, 0);
 
     if (ZMK_SPLIT_BLE_PERIPHERAL_COUNT > 0) battery_card(screen, 0, 22, "L");
