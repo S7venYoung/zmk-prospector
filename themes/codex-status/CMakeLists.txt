@@ -4,6 +4,7 @@ if(CONFIG_ZMK_PROSPECTOR_THEME_CODEX_STATUS)
       ${ZEPHYR_PROSPECTOR_ZMK_MODULE_MODULE_DIR}/boards/shields/prospector_adapter/include)
   target_sources(app PRIVATE
       src/theme.c
+      src/impact_16.c
       src/impact_20.c
       src/impact_56.c)
   target_sources(app PRIVATE src/codex_metrics.c src/codex_metrics_rpc.c)

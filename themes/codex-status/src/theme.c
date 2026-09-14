@@ -14,6 +14,7 @@
 #include <zmk/codex_metrics.h>
 #include <zmk/events/codex_metrics_changed.h>
 
+LV_FONT_DECLARE(impact_16);
 LV_FONT_DECLARE(impact_20);
 LV_FONT_DECLARE(impact_56);
 
@@ -201,9 +202,11 @@ lv_obj_t *zmk_display_status_screen(void) {
     /* Waveshare 1.69in panel: keep all artwork inside the rounded glass safe area. */
     lv_obj_set_style_radius(screen, 24, 0);
 
-    lv_obj_t *brand = text(screen, "CODEX // SOFLE", &impact_20, PAPER);
+    lv_obj_t *brand = text(screen, "CODEX", &impact_20, YELLOW);
     lv_obj_set_pos(brand, 18, 8);
-    lv_obj_t *usb = text(screen, "USB", &impact_20, PAPER);
+    lv_obj_t *brand_suffix = text(screen, "// SOFLE", &impact_20, PAPER);
+    lv_obj_set_pos(brand_suffix, 83, 8);
+    lv_obj_t *usb = text(screen, "USB", &impact_16, PAPER);
     lv_obj_set_pos(usb, 226, 8);
     lv_obj_t *usb_dot = lv_obj_create(screen);
     plain(usb_dot, GREEN);
@@ -216,37 +219,37 @@ lv_obj_t *zmk_display_status_screen(void) {
     lv_obj_set_pos(header_rule, 18, 37);
 
     lv_obj_t *used_card = panel(screen, 14, 48, 122, 96, INK, YELLOW, 14);
-    lv_obj_t *used_caption = text(used_card, "5 HOUR USED", &impact_20, PAPER);
+    lv_obj_t *used_caption = text(used_card, "5 HOUR USED", &impact_16, PAPER);
     lv_obj_set_pos(used_caption, 8, 8);
-    lv_obj_t *used_marks = text(used_card, "///", &impact_20, YELLOW);
-    lv_obj_set_pos(used_marks, 91, 8);
+    lv_obj_t *used_marks = text(used_card, "///", &impact_16, YELLOW);
+    lv_obj_set_pos(used_marks, 101, 8);
     codex_used_value = text(used_card, "--%", &impact_56, YELLOW);
     lv_obj_set_pos(codex_used_value, 4, 34);
     lv_obj_set_width(codex_used_value, 114);
     lv_obj_set_style_text_align(codex_used_value, LV_TEXT_ALIGN_CENTER, 0);
 
     lv_obj_t *token_card = panel(screen, 144, 48, 122, 96, INK, YELLOW, 14);
-    lv_obj_t *token_caption = text(token_card, "TODAY TOTAL", &impact_20, PAPER);
+    lv_obj_t *token_caption = text(token_card, "TODAY TOTAL", &impact_16, PAPER);
     lv_obj_set_pos(token_caption, 8, 8);
-    lv_obj_t *token_marks = text(token_card, "///", &impact_20, YELLOW);
-    lv_obj_set_pos(token_marks, 91, 8);
+    lv_obj_t *token_marks = text(token_card, "///", &impact_16, YELLOW);
+    lv_obj_set_pos(token_marks, 101, 8);
     codex_tokens_value = text(token_card, "--", &impact_56, PAPER);
     lv_obj_set_pos(codex_tokens_value, 2, 34);
     lv_obj_set_width(codex_tokens_value, 118);
     lv_obj_set_style_text_align(codex_tokens_value, LV_TEXT_ALIGN_CENTER, 0);
 
     lv_obj_t *keyboard_bar = panel(screen, 14, 150, 252, 32, INK, MUTED, 10);
-    lv_obj_t *layer_caption = text(keyboard_bar, "LAYER", LV_FONT_DEFAULT, MUTED);
+    lv_obj_t *layer_caption = text(keyboard_bar, "LAYER", &impact_16, MUTED);
     lv_obj_set_pos(layer_caption, 10, 7);
     layer_value = text(keyboard_bar, "BASE", &impact_20, YELLOW);
-    lv_obj_set_pos(layer_value, 64, 2);
+    lv_obj_set_pos(layer_value, 80, 2);
     lv_obj_set_width(layer_value, 65);
     lv_obj_t *bar_divider = lv_obj_create(keyboard_bar);
     plain(bar_divider, MUTED);
     lv_obj_set_size(bar_divider, 1, 22);
     lv_obj_set_pos(bar_divider, 136, 5);
-    lv_obj_t *wpm_caption = text(keyboard_bar, "WPM", LV_FONT_DEFAULT, MUTED);
-    lv_obj_set_pos(wpm_caption, 161, 7);
+    lv_obj_t *wpm_caption = text(keyboard_bar, "WPM", &impact_16, MUTED);
+    lv_obj_set_pos(wpm_caption, 164, 7);
     wpm_value = text(keyboard_bar, "0", &impact_20, YELLOW);
     lv_obj_set_pos(wpm_value, 214, 2);
     lv_obj_set_width(wpm_value, 30);
