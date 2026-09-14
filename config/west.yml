@@ -78,7 +78,7 @@ manifest:
       remote: cormoran
       revision: main
     - name: prospector-zmk-module
-      remote: carrefinho
+      remote: s7venyoung
       revision: core/zephyr-4-1
     - name: zmk-prospector-themes
       remote: s7venyoung
