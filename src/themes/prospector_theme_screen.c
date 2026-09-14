@@ -30,6 +30,11 @@ enum prospector_theme {
 #define SWIPE_THRESHOLD 30
 #define GESTURE_COOLDOWN_MS 400
 #define TOUCH_FALLBACK_MS 350
+/* Waveshare 4-R5 corners are about R43 at 0.11655 mm/pixel. Backgrounds may
+ * bleed to the edge; foreground content stays in the rounded safe area. */
+#define DISPLAY_WIDTH 280
+#define DISPLAY_HEIGHT 240
+#define CORNER_SAFE_INSET 20
 
 static uint8_t current_theme = PROSPECTOR_THEME_WALLE;
 static lv_obj_t *theme_screen;
@@ -224,6 +229,7 @@ lv_obj_t *__wrap_zmk_display_status_screen(void) {
     lv_obj_t *screen = lv_obj_create(NULL);
     theme_screen = screen;
     set_panel_style(screen, charcoal);
+    lv_obj_set_size(screen, DISPLAY_WIDTH, DISPLAY_HEIGHT);
 
     lv_obj_t *header = lv_obj_create(screen);
     theme_header = header;
@@ -235,13 +241,13 @@ lv_obj_t *__wrap_zmk_display_status_screen(void) {
     theme_eyes = eyes;
     lv_label_set_text(eyes, "[o][o]");
     lv_obj_set_style_text_color(eyes, charcoal, 0);
-    lv_obj_align(eyes, LV_ALIGN_LEFT_MID, 8, 0);
+    lv_obj_align(eyes, LV_ALIGN_LEFT_MID, 12, 0);
 
     lv_obj_t *title = lv_label_create(header);
     theme_title = title;
     lv_label_set_text(title, "SOFLE // CODEX");
     lv_obj_set_style_text_color(title, charcoal, 0);
-    lv_obj_align(title, LV_ALIGN_RIGHT_MID, -8, 0);
+    lv_obj_align(title, LV_ALIGN_RIGHT_MID, -12, 0);
 
     lv_obj_t *stripe = lv_obj_create(screen);
     theme_stripe = stripe;
@@ -258,7 +264,10 @@ lv_obj_t *__wrap_zmk_display_status_screen(void) {
                  -54);
 
     zmk_widget_battery_bar_init(&battery_widget, screen);
-    lv_obj_set_size(zmk_widget_battery_bar_obj(&battery_widget), 240, 48);
+    /* The widget itself reaches the bottom edge. Narrow it so its internally
+     * padded numbers and bars remain visible through the R43 lower corners. */
+    lv_obj_set_size(zmk_widget_battery_bar_obj(&battery_widget),
+                    DISPLAY_WIDTH - (2 * CORNER_SAFE_INSET), 48);
     lv_obj_align(zmk_widget_battery_bar_obj(&battery_widget), LV_ALIGN_BOTTOM_MID, 0, 0);
 
     apply_theme();
