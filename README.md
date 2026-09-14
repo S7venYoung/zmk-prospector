@@ -60,6 +60,9 @@ The keyboard-first Codex dashboard is selected with:
 shield: eyelash_sofle_prospector_dongle prospector_adapter prospector_theme_codex_status
 ```
 
+Its standalone macOS bridge lives in `macos/codex-bridge` and is intentionally independent from
+DYA Studio.
+
 ## Display geometry
 
 The Waveshare panel is 240x280 physically and becomes a 280x240 LVGL canvas after rotation.

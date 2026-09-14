@@ -1,0 +1,11 @@
+allowBuilds:
+  '@zmkfirmware/zmk-studio-ts-client@file:vendor/zmk-studio-ts-client': set this to true or false
+  '@zmkfirmware/zmk-studio-ts-client@https://codeload.github.com/cormoran/zmk-studio-ts-client/tar.gz/39083858775d320018716e3d8fd68d00f6d11118': true
+  electron: true
+  esbuild: true
+  protobufjs: true
+onlyBuiltDependencies:
+  - "@zmkfirmware/zmk-studio-ts-client"
+  - electron
+  - esbuild
+  - protobufjs
