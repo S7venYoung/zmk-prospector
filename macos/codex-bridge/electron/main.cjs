@@ -79,7 +79,8 @@ app.whenReady().then(() => {
   session.defaultSession.setDevicePermissionHandler((details) => details.deviceType === "serial");
   session.defaultSession.on("select-serial-port", (event, ports, _wc, callback) => {
     event.preventDefault();
-    const usb = ports.find((p) => /usbmodem|usbserial|usb.*serial/i.test(`${p.displayName} ${p.portName}`));
+    const usb = ports.find((p) => /usbmodem11304/i.test(`${p.displayName} ${p.portName}`))
+      || ports.find((p) => /usbmodem|usbserial|usb.*serial/i.test(`${p.displayName} ${p.portName}`));
     const named = ports.find((p) => /prospector|zmk|xiao|nice.?nano/i.test(`${p.displayName} ${p.portName}`));
     const safe = ports.find((p) => !/bluetooth|debug|wlan/i.test(`${p.displayName} ${p.portName}`));
     callback((usb || named || safe)?.portId || "");
