@@ -16,6 +16,7 @@
 
 LV_FONT_DECLARE(impact_16);
 LV_FONT_DECLARE(impact_20);
+LV_FONT_DECLARE(impact_48);
 LV_FONT_DECLARE(impact_56);
 
 #define INK 0x101411
@@ -103,7 +104,7 @@ ZMK_SUBSCRIPTION(codex_status_layer, zmk_layer_state_changed);
 static void battery_update(struct battery_state state) {
     if (state.source >= ARRAY_SIZE(battery_value) || !battery_value[state.source]) return;
     lv_label_set_text_fmt(battery_value[state.source], "%u%%", state.level);
-    lv_obj_set_width(battery_fill[state.source], MAX(2, (int32_t)state.level * 40 / 100));
+    lv_obj_set_width(battery_fill[state.source], MAX(2, (int32_t)state.level * 34 / 100));
     lv_obj_set_style_bg_color(battery_fill[state.source],
                               lv_color_hex(state.level < 20 ? RED : GREEN), 0);
 }
@@ -155,7 +156,7 @@ ZMK_SUBSCRIPTION(codex_status_wpm, zmk_position_state_changed);
 static void battery_card(lv_obj_t *screen, uint8_t source, int x, const char *side) {
     lv_obj_t *card = lv_obj_create(screen);
     plain(card, INK);
-    lv_obj_set_size(card, 126, 40);
+    lv_obj_set_size(card, 122, 40);
     lv_obj_set_pos(card, x, 190);
     lv_obj_set_style_radius(card, 12, 0);
     lv_obj_set_style_border_width(card, 2, 0);
@@ -167,19 +168,19 @@ static void battery_card(lv_obj_t *screen, uint8_t source, int x, const char *si
     connection_dot[source] = lv_obj_create(card);
     plain(connection_dot[source], GREEN);
     lv_obj_set_size(connection_dot[source], 10, 10);
-    lv_obj_set_pos(connection_dot[source], 108, 14);
+    lv_obj_set_pos(connection_dot[source], 104, 14);
     lv_obj_set_style_radius(connection_dot[source], LV_RADIUS_CIRCLE, 0);
     lv_obj_t *track = lv_obj_create(card);
     plain(track, PAPER);
     lv_obj_set_size(track, 38, 14);
-    lv_obj_set_pos(track, 65, 12);
+    lv_obj_set_pos(track, 63, 12);
     lv_obj_set_style_radius(track, 3, 0);
     lv_obj_set_style_border_width(track, 1, 0);
     lv_obj_set_style_border_color(track, lv_color_hex(PAPER), 0);
     battery_fill[source] = lv_obj_create(card);
     plain(battery_fill[source], GREEN);
     lv_obj_set_size(battery_fill[source], 4, 9);
-    lv_obj_set_pos(battery_fill[source], 67, 14);
+    lv_obj_set_pos(battery_fill[source], 65, 14);
     lv_obj_set_style_radius(battery_fill[source], 2, 0);
 }
 
@@ -233,30 +234,30 @@ lv_obj_t *zmk_display_status_screen(void) {
     lv_obj_set_pos(token_caption, 8, 8);
     lv_obj_t *token_marks = text(token_card, "///", &impact_16, YELLOW);
     lv_obj_set_pos(token_marks, 101, 8);
-    codex_tokens_value = text(token_card, "--", &impact_56, PAPER);
-    lv_obj_set_pos(codex_tokens_value, 2, 34);
+    codex_tokens_value = text(token_card, "--", &impact_48, PAPER);
+    lv_obj_set_pos(codex_tokens_value, 2, 38);
     lv_obj_set_width(codex_tokens_value, 118);
     lv_obj_set_style_text_align(codex_tokens_value, LV_TEXT_ALIGN_CENTER, 0);
 
     lv_obj_t *keyboard_bar = panel(screen, 14, 150, 252, 32, INK, MUTED, 10);
     lv_obj_t *layer_caption = text(keyboard_bar, "LAYER", &impact_16, MUTED);
-    lv_obj_set_pos(layer_caption, 10, 7);
+    lv_obj_set_pos(layer_caption, 10, 8);
     layer_value = text(keyboard_bar, "BASE", &impact_20, YELLOW);
-    lv_obj_set_pos(layer_value, 80, 2);
+    lv_obj_set_pos(layer_value, 76, 3);
     lv_obj_set_width(layer_value, 65);
     lv_obj_t *bar_divider = lv_obj_create(keyboard_bar);
     plain(bar_divider, MUTED);
     lv_obj_set_size(bar_divider, 1, 22);
     lv_obj_set_pos(bar_divider, 136, 5);
     lv_obj_t *wpm_caption = text(keyboard_bar, "WPM", &impact_16, MUTED);
-    lv_obj_set_pos(wpm_caption, 164, 7);
+    lv_obj_set_pos(wpm_caption, 164, 8);
     wpm_value = text(keyboard_bar, "0", &impact_20, YELLOW);
-    lv_obj_set_pos(wpm_value, 214, 2);
+    lv_obj_set_pos(wpm_value, 214, 3);
     lv_obj_set_width(wpm_value, 30);
     lv_obj_set_style_text_align(wpm_value, LV_TEXT_ALIGN_RIGHT, 0);
 
-    if (ZMK_SPLIT_BLE_PERIPHERAL_COUNT > 0) battery_card(screen, 0, 18, "L");
-    if (ZMK_SPLIT_BLE_PERIPHERAL_COUNT > 1) battery_card(screen, 1, 148, "R");
+    if (ZMK_SPLIT_BLE_PERIPHERAL_COUNT > 0) battery_card(screen, 0, 14, "L");
+    if (ZMK_SPLIT_BLE_PERIPHERAL_COUNT > 1) battery_card(screen, 1, 144, "R");
 
     codex_status_layer_init();
     codex_status_battery_init();

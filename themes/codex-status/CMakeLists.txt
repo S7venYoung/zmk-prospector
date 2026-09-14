@@ -6,6 +6,7 @@ if(CONFIG_ZMK_PROSPECTOR_THEME_CODEX_STATUS)
       src/theme.c
       src/impact_16.c
       src/impact_20.c
+      src/impact_48.c
       src/impact_56.c)
   target_sources(app PRIVATE src/codex_metrics.c src/codex_metrics_rpc.c)
 
