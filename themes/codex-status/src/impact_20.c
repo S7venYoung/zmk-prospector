@@ -4,11 +4,7 @@
  * Opts: --font /System/Library/Fonts/Supplemental/Impact.ttf --size 20 --bpp 4 --format lvgl --no-compress -r 0x20-0x7F -o themes/codex-status/src/impact_20.c
  ******************************************************************************/
 
-#ifdef LV_LVGL_H_INCLUDE_SIMPLE
-#include "lvgl.h"
-#else
-#include "lvgl/lvgl.h"
-#endif
+#include <lvgl.h>
 
 #ifndef IMPACT_20
 #define IMPACT_20 1
@@ -1196,4 +1192,3 @@ lv_font_t impact_20 = {
 
 
 #endif /*#if IMPACT_20*/
-
