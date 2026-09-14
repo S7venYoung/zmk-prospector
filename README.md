@@ -3,6 +3,22 @@
 Receiver-only display themes for the Prospector dongle. This branch contains no keyboard keymap,
 macro, encoder, RGB, or power-management configuration.
 
+## Layout
+
+Each theme owns a directory below `themes/`:
+
+```text
+themes/
+  walle/
+    README.md
+    src/
+      theme.c
+    fonts/       # optional
+    assets/      # optional
+```
+
+The matching entry in `boards/shields/` only enables that theme during a receiver build.
+
 ## Add the module
 
 Add this project to the keyboard repository's `config/west.yml`:
