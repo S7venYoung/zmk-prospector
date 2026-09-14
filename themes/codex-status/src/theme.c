@@ -57,7 +57,8 @@ static void metrics_update(struct zmk_codex_metrics_changed state) {
         lv_label_set_text(codex_tokens_value, "--");
         return;
     }
-    lv_label_set_text_fmt(codex_used_value, "%u%%", state.five_hour_used_percent);
+    /* The host reports consumption; the dashboard intentionally foregrounds what remains. */
+    lv_label_set_text_fmt(codex_used_value, "%u%%", 100 - state.five_hour_used_percent);
     char tokens[16];
     format_tokens(tokens, sizeof(tokens), state.today_total_tokens);
     lv_label_set_text(codex_tokens_value, tokens);
@@ -221,7 +222,7 @@ lv_obj_t *zmk_display_status_screen(void) {
     lv_obj_set_pos(header_rule, 18, 37);
 
     lv_obj_t *used_card = panel(screen, 14, 48, 122, 96, INK, YELLOW, 14);
-    lv_obj_t *used_caption = text(used_card, "5 HOUR USED", &impact_16, PAPER);
+    lv_obj_t *used_caption = text(used_card, "5 HOUR LEFT", &impact_16, PAPER);
     lv_obj_set_pos(used_caption, 8, 8);
     lv_obj_t *used_marks = text(used_card, "///", &impact_16, YELLOW);
     lv_obj_set_pos(used_marks, 101, 8);
