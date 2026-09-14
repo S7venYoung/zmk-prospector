@@ -9,6 +9,12 @@ Each theme owns a directory below `themes/`:
 
 ```text
 themes/
+  codex-status/
+    README.md
+    CMakeLists.txt
+    Kconfig
+    src/
+      theme.c
   walle/
     README.md
     CMakeLists.txt
@@ -47,6 +53,12 @@ shield: eyelash_sofle_prospector_dongle prospector_adapter prospector_theme_wall
 ```
 
 Remove `prospector_theme_walle` to build the receiver with its normal display.
+
+The keyboard-first Codex dashboard is selected with:
+
+```yaml
+shield: eyelash_sofle_prospector_dongle prospector_adapter prospector_theme_codex_status
+```
 
 ## Display geometry
 

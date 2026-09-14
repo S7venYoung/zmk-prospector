@@ -1,5 +1,6 @@
 menu "Prospector display themes"
 
 rsource "themes/walle/Kconfig"
+rsource "themes/codex-status/Kconfig"
 
 endmenu
