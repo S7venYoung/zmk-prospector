@@ -7,6 +7,14 @@ let connection;
 let subsystemIndex;
 let timer;
 
+function withTimeout(promise, label, ms = 8000) {
+  let timeout;
+  const guard = new Promise((_, reject) => {
+    timeout = setTimeout(() => reject(new Error(`${label}超时，请确认接收器已连接且 DYA 已退出`)), ms);
+  });
+  return Promise.race([promise, guard]).finally(() => clearTimeout(timeout));
+}
+
 const app = document.querySelector("#app");
 app.innerHTML = `
   <header><span class="eyes">● ●</span><h1>CODEX // PROSPECTOR</h1></header>
@@ -46,9 +54,9 @@ async function sync() {
   document.querySelector("#used").textContent = metrics.usedPercent == null ? "--%" : `${metrics.usedPercent}%`;
   document.querySelector("#tokens").textContent = compact(metrics.totalTokens);
   if (!connection || subsystemIndex == null || metrics.usedPercent == null) return;
-  const response = await call_rpc(connection, { custom: { call: {
+  const response = await withTimeout(call_rpc(connection, { custom: { call: {
     subsystemIndex, payload: encodeMetrics(metrics)
-  } } });
+  } } }), "同步 Codex 数据");
   if (!response.custom?.call) throw new Error("接收器未确认数据");
   status.textContent = `已同步 · ${new Date().toLocaleTimeString()}`;
 }
@@ -57,9 +65,13 @@ button.addEventListener("click", async () => {
   button.disabled = true;
   status.textContent = "正在连接…";
   try {
-    const transport = await connect();
+    status.textContent = "请选择 Prospector 接收器…";
+    const transport = await withTimeout(connect(), "串口连接");
     connection = create_rpc_connection(transport);
-    const listed = await call_rpc(connection, { custom: { listCustomSubsystems: {} } });
+    const listed = await withTimeout(
+      call_rpc(connection, { custom: { listCustomSubsystems: {} } }),
+      "读取接收器能力"
+    );
     const item = listed.custom?.listCustomSubsystems?.subsystems.find((x) => x.identifier === SUBSYSTEM);
     if (!item) throw new Error("固件没有 Codex metrics 子系统");
     subsystemIndex = item.index;
