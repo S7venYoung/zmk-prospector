@@ -197,7 +197,6 @@ lv_obj_t *zmk_display_status_screen(void) {
     lv_obj_set_size(screen, 280, 240);
     /* Waveshare 1.69in panel: keep all artwork inside the rounded glass safe area. */
     lv_obj_set_style_radius(screen, 24, 0);
-    lv_obj_add_flag(screen, LV_OBJ_FLAG_CLIP_CORNER);
 
     lv_obj_t *brand = text(screen, "CODEX // SOFLE", &FoundryGridnikMedium_20, PAPER);
     lv_obj_set_pos(brand, 18, 8);
