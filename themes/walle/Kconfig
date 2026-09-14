@@ -1,0 +1,4 @@
+config ZMK_PROSPECTOR_THEME_WALLE
+    bool "WALL-E / Codex theme"
+    depends on ZMK_DISPLAY
+    default n

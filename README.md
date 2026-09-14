@@ -11,6 +11,8 @@ Each theme owns a directory below `themes/`:
 themes/
   walle/
     README.md
+    CMakeLists.txt
+    Kconfig
     src/
       theme.c
     fonts/       # optional
