@@ -4,8 +4,8 @@ package s7venyoung.codex_metrics;
 
 message Metrics {
   uint32 five_hour_used_percent = 1;
-  uint64 today_total_tokens = 2;
-  uint64 updated_at = 3;
+  uint32 today_total_tokens = 2;
+  uint32 updated_at = 3;
 }
 
 message SetMetricsRequest { Metrics metrics = 1; }
