@@ -1,6 +1,6 @@
 ---
 include:
-  # Receiver build with the Codex-first dashboard and condensed display font.
+  # Receiver build with the Codex-first dashboard and ZMK-compatible condensed font.
   - board: xiao_ble//zmk
     shield: eyelash_sofle_prospector_dongle prospector_adapter prospector_theme_codex_status
     snippet: studio-rpc-usb-uart
