@@ -1,8 +1,11 @@
 #include <pb_decode.h>
 #include <pb_encode.h>
+#include <zephyr/logging/log.h>
 #include <zmk/codex_metrics.h>
 #include <zmk/studio/custom.h>
 #include <s7venyoung/codex_metrics/codex_metrics.pb.h>
+
+LOG_MODULE_REGISTER(codex_metrics_rpc, CONFIG_ZMK_LOG_LEVEL);
 
 static bool handle_request(const zmk_custom_CallRequest *raw_request, pb_callback_t *encode_response);
 
