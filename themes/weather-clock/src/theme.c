@@ -171,6 +171,10 @@ lv_obj_t *zmk_display_status_screen(void) {
     weather_icon = box(s, 18, 14, 30, 30, GOLD, LV_RADIUS_CIRCLE); metal(weather_icon, 0xFFE578, 0xB78015); (void)box(weather_icon, 7, 7, 16, 16, INK, LV_RADIUS_CIRCLE);
     temperature_value = label(s, "--C", &impact_20, GOLD); lv_obj_set_pos(temperature_value, 112, 14);
     high_low_value = label(s, "H --  L --", &impact_16, PAPER); lv_obj_set_pos(high_low_value, 90, 40);
+    /* Three geometric droplets: visible on every firmware without an icon font. */
+    (void)box(s, 244, 16, 9, 12, GOLD, LV_RADIUS_CIRCLE);
+    (void)box(s, 256, 23, 7, 10, GOLD, LV_RADIUS_CIRCLE);
+    (void)box(s, 237, 28, 6, 8, GOLD, LV_RADIUS_CIRCLE);
     rain_value = label(s, "--%", &impact_16, GOLD); lv_obj_set_pos(rain_value, 218, 40);
     lv_obj_t *date = box(s, 28, 68, 224, 29, GOLD, 15); metal(date, 0xFFE980, 0xA87514); stroke(date, 0xFFE08A, 1, 15); date_value = label(date, "WAIT HOST", &impact_20, INK); lv_obj_center(date_value);
     time_value = label(s, "00:00", &impact_56, PAPER); lv_obj_set_width(time_value, 260); lv_obj_set_style_text_align(time_value, LV_TEXT_ALIGN_CENTER, 0); lv_obj_set_pos(time_value, 10, 97);
