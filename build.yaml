@@ -1,6 +1,6 @@
 ---
 include:
-  # Receiver build with the Codex-first dashboard, shared touch settings, token unit visibility, and coordinate-based horizontal swipes (v12).
+  # Receiver build with the Codex-first dashboard, shared touch settings, token unit visibility, and coordinate-based horizontal swipes (v13; receiver-only matrix).
   - board: xiao_ble//zmk
     shield: eyelash_sofle_prospector_dongle prospector_adapter prospector_theme_codex_status
     snippet: studio-rpc-usb-uart
@@ -18,15 +18,6 @@ include:
     snippet: studio-rpc-usb-uart
     cmake-args: -DCONFIG_ZMK_STUDIO=y -DCONFIG_ZMK_STUDIO_LOCKING=n
     artifact-name: eyelash_sofle_prospector_dongle_weather_clock
-  - board: nice_nano//zmk
-    shield: eyelash_sofle_peripheral_left nice_view
-    artifact-name: eyelash_sofle_peripheral_left_nice_view
-  - board: nice_nano//zmk
-    shield: eyelash_sofle_peripheral_right nice_view
-    artifact-name: eyelash_sofle_peripheral_right_nice_view
-  - board: nice_nano//zmk
-    shield: settings_reset
-    artifact-name: settings_reset_nice_nano
   - board: xiao_ble//zmk
     shield: settings_reset
     artifact-name: settings_reset_xiao_ble
