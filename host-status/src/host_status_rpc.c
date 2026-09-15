@@ -35,6 +35,7 @@ static bool handle_request(const zmk_custom_CallRequest *raw_request, pb_callbac
             .high_temperature_deci_c = incoming->high_temperature_deci_c,
             .low_temperature_deci_c = incoming->low_temperature_deci_c,
             .rain_probability = incoming->rain_probability,
+            .timezone_offset_minutes = incoming->timezone_offset_minutes,
         });
         response->which_response_type = s7venyoung_host_status_Response_ack_tag;
         response->response_type.ack.ok = ret == 0;
@@ -50,6 +51,7 @@ static bool handle_request(const zmk_custom_CallRequest *raw_request, pb_callbac
         response->response_type.status.high_temperature_deci_c = current.high_temperature_deci_c;
         response->response_type.status.low_temperature_deci_c = current.low_temperature_deci_c;
         response->response_type.status.rain_probability = current.rain_probability;
+        response->response_type.status.timezone_offset_minutes = current.timezone_offset_minutes;
         return true;
     }
     return false;
