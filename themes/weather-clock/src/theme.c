@@ -17,10 +17,6 @@
 #include <fonts.h>
 #include <symbols.h>
 
-LV_FONT_DECLARE(impact_16);
-LV_FONT_DECLARE(impact_20);
-LV_FONT_DECLARE(impact_56);
-
 #define INK 0x101411
 #define GOLD 0xE4B52C
 #define PAPER 0xF3EEE5
@@ -142,28 +138,28 @@ ZMK_SUBSCRIPTION(weather_clock_modifiers, zmk_keycode_state_changed);
 lv_obj_t *zmk_display_status_screen(void) {
     lv_obj_t *s = lv_obj_create(NULL); plain(s, INK); lv_obj_set_size(s, 280, 240); lv_obj_set_style_radius(s, 24, 0);
     lv_obj_t *sun = box(s, 18, 14, 30, 30, GOLD, LV_RADIUS_CIRCLE); (void)box(sun, 7, 7, 16, 16, INK, LV_RADIUS_CIRCLE);
-    lv_obj_t *weather = label(s, "TODAY'S WEATHER", &impact_16, PAPER); lv_obj_set_pos(weather, 83, 8);
-    temperature_value = label(s, "--C", &impact_20, GOLD); lv_obj_set_pos(temperature_value, 112, 26);
-    lv_obj_t *humidity = label(s, "H 25  L 18   65", &impact_16, PAPER); lv_obj_set_pos(humidity, 84, 46);
-    lv_obj_t *date = box(s, 36, 66, 208, 26, GOLD, 13); date_value = label(date, "WAIT HOST", &impact_20, INK); lv_obj_center(date_value);
-    time_value = label(s, "--:--", &impact_56, PAPER); lv_obj_set_width(time_value, 250); lv_obj_set_style_text_align(time_value, LV_TEXT_ALIGN_CENTER, 0); lv_obj_set_pos(time_value, 15, 94);
-    lv_obj_t *stats = box(s, 10, 155, 260, 76, GOLD, 16);
-    lv_obj_t *wpm_caption = label(stats, "WPM", &impact_16, INK); lv_obj_set_pos(wpm_caption, 22, 8); wpm_value = label(stats, "0", &impact_20, INK); lv_obj_set_pos(wpm_value, 30, 26);
+    lv_obj_t *weather = label(s, "TODAY'S WEATHER", &FoundryGridnikMedium_20, PAPER); lv_obj_set_pos(weather, 72, 6);
+    temperature_value = label(s, "--C", &FoundryGridnikMedium_20, GOLD); lv_obj_set_pos(temperature_value, 112, 28);
+    lv_obj_t *humidity = label(s, "H 25  L 18   65", &FoundryGridnikMedium_20, PAPER); lv_obj_set_pos(humidity, 72, 48);
+    lv_obj_t *date = box(s, 28, 68, 224, 29, GOLD, 15); date_value = label(date, "WAIT HOST", &FoundryGridnikMedium_20, INK); lv_obj_center(date_value);
+    time_value = label(s, "--:--", &FRAC_Regular_48, PAPER); lv_obj_set_width(time_value, 260); lv_obj_set_style_text_align(time_value, LV_TEXT_ALIGN_CENTER, 0); lv_obj_set_pos(time_value, 10, 97);
+    lv_obj_t *stats = box(s, 10, 151, 260, 80, GOLD, 16);
+    lv_obj_t *wpm_caption = label(stats, "WPM", &FoundryGridnikMedium_20, INK); lv_obj_set_pos(wpm_caption, 20, 5); wpm_value = label(stats, "0", &FoundryGridnikMedium_20, INK); lv_obj_set_pos(wpm_value, 32, 25);
     lv_obj_t *divider1 = box(stats, 86, 10, 1, 32, INK, 0); lv_obj_set_style_bg_opa(divider1, LV_OPA_30, 0);
-    lv_obj_t *left = label(stats, "L", &impact_16, INK); lv_obj_set_pos(left, 122, 8);
+    lv_obj_t *left = label(stats, "L", &FoundryGridnikMedium_20, INK); lv_obj_set_pos(left, 122, 5);
 #if ZMK_SPLIT_BLE_PERIPHERAL_COUNT > 0
-    battery_value[0] = label(stats, "--%", &impact_20, INK); lv_obj_set_pos(battery_value[0], 108, 26);
+    battery_value[0] = label(stats, "--%", &FoundryGridnikMedium_20, INK); lv_obj_set_pos(battery_value[0], 108, 25);
 #endif
     lv_obj_t *divider2 = box(stats, 173, 10, 1, 32, INK, 0); lv_obj_set_style_bg_opa(divider2, LV_OPA_30, 0);
-    lv_obj_t *right = label(stats, "R", &impact_16, INK); lv_obj_set_pos(right, 210, 8);
+    lv_obj_t *right = label(stats, "R", &FoundryGridnikMedium_20, INK); lv_obj_set_pos(right, 210, 5);
 #if ZMK_SPLIT_BLE_PERIPHERAL_COUNT > 1
-    battery_value[1] = label(stats, "--%", &impact_20, INK); lv_obj_set_pos(battery_value[1], 195, 26);
+    battery_value[1] = label(stats, "--%", &FoundryGridnikMedium_20, INK); lv_obj_set_pos(battery_value[1], 195, 25);
 #endif
-    lv_obj_t *mod = box(stats, 10, 49, 240, 22, GRAPHITE, 6);
+    lv_obj_t *mod = box(stats, 10, 51, 240, 24, GRAPHITE, 7);
     const char *symbols[] = {SYMBOL_COMMAND, SYMBOL_OPTION, SYMBOL_CONTROL, SYMBOL_SHIFT};
     for (int i = 0; i < 4; i++) {
-        modifier_key[i] = box(mod, 4 + i * 59, 3, 54, 16, GRAPHITE, 4);
-        stroke(modifier_key[i], PAPER, 1, 4);
+        modifier_key[i] = box(mod, 4 + i * 59, 3, 54, 18, GRAPHITE, 5);
+        stroke(modifier_key[i], PAPER, 1, 5);
         lv_obj_t *symbol = label(modifier_key[i], symbols[i], &Symbols_Semibold_32, PAPER);
         lv_obj_center(symbol);
     }
