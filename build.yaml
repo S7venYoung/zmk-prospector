@@ -1,6 +1,6 @@
 ---
 include:
-  # Receiver build with the Codex-first dashboard, shared touch settings, token unit visibility, and coordinate-based horizontal swipes (v14; receiver-only matrix, dynamic daily weather).
+  # Receiver build with the Codex-first dashboard, shared touch settings, token unit visibility, and coordinate-based horizontal swipes (v15; receiver-only matrix, dynamic weather symbols).
   - board: xiao_ble//zmk
     shield: eyelash_sofle_prospector_dongle prospector_adapter prospector_theme_codex_status
     snippet: studio-rpc-usb-uart
