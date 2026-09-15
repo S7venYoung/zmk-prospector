@@ -4,11 +4,7 @@
  * Opts: --font /private/tmp/HiraginoSansGB.ttf --symbols æææ¥ä¸äºä¸åäºå­å¹´æ0123456789  --size 18 --bpp 4 --format lvgl --no-compress --no-kerning --lv-font-name chinese_date_18 -o work/prospector-themes-module/themes/weather-clock/src/chinese_date_18.c
  ******************************************************************************/
 
-#ifdef LV_LVGL_H_INCLUDE_SIMPLE
-#include "lvgl.h"
-#else
-#include "lvgl/lvgl.h"
-#endif
+#include <lvgl.h>
 
 #ifndef CHINESE_DATE_18
 #define CHINESE_DATE_18 1
@@ -446,4 +442,3 @@ lv_font_t chinese_date_18 = {
 
 
 #endif /*#if CHINESE_DATE_18*/
-
