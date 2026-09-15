@@ -75,7 +75,8 @@ static void civil_date(uint32_t seconds, int *year, unsigned *month, unsigned *d
 static void host_update(struct zmk_host_status_changed state) {
     if (!time_value || !date_value || !temperature_value) return;
     if (!state.unix_time) { lv_label_set_text(time_value, "--:--"); lv_label_set_text(date_value, "WAIT HOST"); lv_label_set_text(temperature_value, "--C"); lv_label_set_text(high_low_value, "H --  L --"); lv_label_set_text(rain_value, "--%"); return; }
-    uint32_t seconds = state.unix_time;
+    /* unix_time is UTC; the companion supplies the host's local offset. */
+    uint32_t seconds = state.unix_time + state.timezone_offset_minutes * 60;
     uint32_t seconds_day = seconds % 86400;
     lv_label_set_text_fmt(time_value, "%02u:%02u", seconds_day / 3600, (seconds_day / 60) % 60);
     int temperature_abs = state.temperature_deci_c < 0 ? -state.temperature_deci_c : state.temperature_deci_c;
@@ -100,6 +101,7 @@ static struct zmk_host_status_changed host_get(const zmk_event_t *eh) {
         .high_temperature_deci_c = s.high_temperature_deci_c,
         .low_temperature_deci_c = s.low_temperature_deci_c,
         .rain_probability = s.rain_probability,
+        .timezone_offset_minutes = s.timezone_offset_minutes,
     };
 }
 ZMK_DISPLAY_WIDGET_LISTENER(weather_clock_host, struct zmk_host_status_changed, host_update, host_get)
