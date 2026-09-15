@@ -29,5 +29,6 @@ int zmk_host_status_set(struct zmk_host_status status) {
         .high_temperature_deci_c = status.high_temperature_deci_c,
         .low_temperature_deci_c = status.low_temperature_deci_c,
         .rain_probability = status.rain_probability,
+        .timezone_offset_minutes = status.timezone_offset_minutes,
     });
 }
