@@ -1,0 +1,5 @@
+config ZMK_PROSPECTOR_THEME_WEATHER_CLOCK
+    bool "Weather Clock theme"
+    depends on ZMK_DISPLAY
+    select ZMK_PROSPECTOR_HOST_STATUS
+    default n
