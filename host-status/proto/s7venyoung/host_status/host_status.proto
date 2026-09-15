@@ -7,6 +7,9 @@ message Status {
   sint32 temperature_deci_c = 2;
   uint32 weather_code = 3;
   uint32 observed_at = 4;
+  sint32 high_temperature_deci_c = 5;
+  sint32 low_temperature_deci_c = 6;
+  uint32 rain_probability = 7;
 }
 
 message SetStatusRequest { Status status = 1; }
