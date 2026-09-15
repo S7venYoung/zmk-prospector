@@ -7,7 +7,6 @@ if(CONFIG_ZMK_PROSPECTOR_THEME_WEATHER_CLOCK)
       ${CMAKE_CURRENT_SOURCE_DIR}/../walle/src/impact_16.c
       ${CMAKE_CURRENT_SOURCE_DIR}/../walle/src/impact_20.c
       ${CMAKE_CURRENT_SOURCE_DIR}/../walle/src/impact_56.c
-      src/Symbols_Semibold_28.c
-      src/chinese_date_18.c)
+      src/Symbols_Semibold_28.c)
   zephyr_link_libraries(-Wl,--allow-multiple-definition)
 endif()
