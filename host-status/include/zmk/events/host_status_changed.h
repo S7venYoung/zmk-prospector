@@ -11,6 +11,7 @@ struct zmk_host_status_changed {
     int16_t high_temperature_deci_c;
     int16_t low_temperature_deci_c;
     uint8_t rain_probability;
+    int16_t timezone_offset_minutes;
 };
 
 ZMK_EVENT_DECLARE(zmk_host_status_changed);
