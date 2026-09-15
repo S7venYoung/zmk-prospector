@@ -3,6 +3,9 @@
 #include <zmk/host_status.h>
 #include <zmk/studio/custom.h>
 #include <s7venyoung/host_status/host_status.pb.h>
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(prospector_host_status_rpc, CONFIG_ZMK_LOG_LEVEL);
 
 static bool handle_request(const zmk_custom_CallRequest *raw_request, pb_callback_t *encode_response);
 static struct zmk_rpc_custom_subsystem_meta status_meta = {
