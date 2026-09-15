@@ -27,7 +27,7 @@ LV_FONT_DECLARE(impact_56);
 #define GRAPHITE 0x202522
 #define GREEN 0x58E85D
 
-static lv_obj_t *time_value, *date_value, *temperature_value;
+static lv_obj_t *time_value, *date_value, *temperature_value, *high_low_value, *rain_value, *weather_icon;
 static lv_obj_t *battery_value[ZMK_SPLIT_BLE_PERIPHERAL_COUNT];
 static lv_obj_t *wpm_value;
 static lv_obj_t *modifier_key[4];
@@ -74,12 +74,18 @@ static void civil_date(uint32_t seconds, int *year, unsigned *month, unsigned *d
 }
 static void host_update(struct zmk_host_status_changed state) {
     if (!time_value || !date_value || !temperature_value) return;
-    if (!state.unix_time) { lv_label_set_text(time_value, "--:--"); lv_label_set_text(date_value, "WAIT HOST"); lv_label_set_text(temperature_value, "--C"); return; }
+    if (!state.unix_time) { lv_label_set_text(time_value, "--:--"); lv_label_set_text(date_value, "WAIT HOST"); lv_label_set_text(temperature_value, "--C"); lv_label_set_text(high_low_value, "H --  L --"); lv_label_set_text(rain_value, "--%"); return; }
     uint32_t seconds = state.unix_time;
     uint32_t seconds_day = seconds % 86400;
     lv_label_set_text_fmt(time_value, "%02u:%02u", seconds_day / 3600, (seconds_day / 60) % 60);
     int temperature_abs = state.temperature_deci_c < 0 ? -state.temperature_deci_c : state.temperature_deci_c;
     lv_label_set_text_fmt(temperature_value, "%d.%dC", state.temperature_deci_c / 10, temperature_abs % 10);
+    lv_label_set_text_fmt(high_low_value, "H %d  L %d", state.high_temperature_deci_c / 10, state.low_temperature_deci_c / 10);
+    lv_label_set_text_fmt(rain_value, "%u%%", state.rain_probability);
+    if (weather_icon) {
+        uint32_t icon_color = state.weather_code >= 51 ? 0x73B9EE : GOLD;
+        lv_obj_set_style_bg_color(weather_icon, lv_color_hex(icon_color), 0);
+    }
     static const char *days[] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
     static const char *months[] = {"JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"};
     int year; unsigned month, day, weekday; civil_date(seconds, &year, &month, &day, &weekday);
@@ -88,7 +94,13 @@ static void host_update(struct zmk_host_status_changed state) {
 static struct zmk_host_status_changed host_get(const zmk_event_t *eh) {
     if (eh) return *as_zmk_host_status_changed(eh);
     struct zmk_host_status s = zmk_host_status_get();
-    return (struct zmk_host_status_changed){s.unix_time, s.temperature_deci_c, s.weather_code, s.observed_at};
+    return (struct zmk_host_status_changed){
+        .unix_time = s.unix_time, .temperature_deci_c = s.temperature_deci_c,
+        .weather_code = s.weather_code, .observed_at = s.observed_at,
+        .high_temperature_deci_c = s.high_temperature_deci_c,
+        .low_temperature_deci_c = s.low_temperature_deci_c,
+        .rain_probability = s.rain_probability,
+    };
 }
 ZMK_DISPLAY_WIDGET_LISTENER(weather_clock_host, struct zmk_host_status_changed, host_update, host_get)
 ZMK_SUBSCRIPTION(weather_clock_host, zmk_host_status_changed);
@@ -140,32 +152,26 @@ static int modifier_listener(const zmk_event_t *eh) {
 ZMK_LISTENER(weather_clock_modifiers, modifier_listener);
 ZMK_SUBSCRIPTION(weather_clock_modifiers, zmk_keycode_state_changed);
 
+static void pixel(lv_obj_t *key, int col, int row) { (void)box(key, 18 + col * 3, 3 + row * 3, 3, 3, PAPER, 0); }
 static void draw_modifier_icon(lv_obj_t *key, int icon) {
-    if (icon == 0) { /* Command: four loops joined as a compact clover. */
-        (void)box(key, 15, 3, 5, 5, PAPER, 1); (void)box(key, 34, 3, 5, 5, PAPER, 1);
-        (void)box(key, 15, 10, 5, 5, PAPER, 1); (void)box(key, 34, 10, 5, 5, PAPER, 1);
-        (void)box(key, 19, 5, 16, 2, PAPER, 0); (void)box(key, 19, 11, 16, 2, PAPER, 0);
-        (void)box(key, 25, 6, 2, 6, PAPER, 0);
-    } else if (icon == 1) { /* Option: a self-drawn crossed pair. */
-        (void)box(key, 16, 11, 5, 2, PAPER, 0); (void)box(key, 20, 8, 5, 2, PAPER, 0);
-        (void)box(key, 24, 5, 5, 2, PAPER, 0); (void)box(key, 28, 8, 5, 2, PAPER, 0);
-        (void)box(key, 32, 11, 5, 2, PAPER, 0);
-    } else if (icon == 2) { /* Control: caret with a central stem. */
-        (void)box(key, 17, 10, 5, 2, PAPER, 0); (void)box(key, 21, 7, 5, 2, PAPER, 0);
-        (void)box(key, 25, 4, 5, 2, PAPER, 0); (void)box(key, 29, 7, 5, 2, PAPER, 0);
-        (void)box(key, 33, 10, 5, 2, PAPER, 0); (void)box(key, 26, 6, 2, 9, PAPER, 0);
-    } else { /* Shift */
-        (void)box(key, 25, 2, 5, 3, PAPER, 0); (void)box(key, 21, 5, 13, 3, PAPER, 0);
-        (void)box(key, 18, 8, 19, 3, PAPER, 0); (void)box(key, 25, 10, 5, 5, PAPER, 0);
-        (void)box(key, 18, 15, 19, 2, PAPER, 0);
+    /* Large, fixed pixel glyphs avoid the unavailable macOS Symbols font. */
+    static const uint8_t glyphs[4][7] = {
+        {0x66, 0x42, 0x3C, 0x3C, 0x42, 0x66, 0x00}, /* command */
+        {0x41, 0x22, 0x14, 0x08, 0x14, 0x22, 0x41}, /* option */
+        {0x18, 0x24, 0x42, 0x00, 0x00, 0x00, 0x00}, /* control */
+        {0x18, 0x3C, 0x7E, 0x18, 0x18, 0x3C, 0x00}, /* shift */
+    };
+    for (int row = 0; row < 7; row++) for (int col = 0; col < 7; col++) {
+        if (glyphs[icon][row] & (1U << (6 - col))) pixel(key, col, row);
     }
 }
 
 lv_obj_t *zmk_display_status_screen(void) {
     lv_obj_t *s = lv_obj_create(NULL); plain(s, INK); lv_obj_set_size(s, 280, 240); lv_obj_set_style_radius(s, 24, 0); metal(s, 0x161A17, 0x030403);
-    lv_obj_t *sun = box(s, 18, 14, 30, 30, GOLD, LV_RADIUS_CIRCLE); metal(sun, 0xFFE578, 0xB78015); (void)box(sun, 7, 7, 16, 16, INK, LV_RADIUS_CIRCLE);
+    weather_icon = box(s, 18, 14, 30, 30, GOLD, LV_RADIUS_CIRCLE); metal(weather_icon, 0xFFE578, 0xB78015); (void)box(weather_icon, 7, 7, 16, 16, INK, LV_RADIUS_CIRCLE);
     temperature_value = label(s, "--C", &impact_20, GOLD); lv_obj_set_pos(temperature_value, 112, 14);
-    lv_obj_t *humidity = label(s, "H 25  L 18   65", &impact_16, PAPER); lv_obj_set_pos(humidity, 84, 40);
+    high_low_value = label(s, "H --  L --", &impact_16, PAPER); lv_obj_set_pos(high_low_value, 90, 40);
+    rain_value = label(s, "--%", &impact_16, GOLD); lv_obj_set_pos(rain_value, 218, 40);
     lv_obj_t *date = box(s, 28, 68, 224, 29, GOLD, 15); metal(date, 0xFFE980, 0xA87514); stroke(date, 0xFFE08A, 1, 15); date_value = label(date, "WAIT HOST", &impact_20, INK); lv_obj_center(date_value);
     time_value = label(s, "00:00", &impact_56, PAPER); lv_obj_set_width(time_value, 260); lv_obj_set_style_text_align(time_value, LV_TEXT_ALIGN_CENTER, 0); lv_obj_set_pos(time_value, 10, 97);
     lv_obj_t *stats = box(s, 10, 151, 260, 80, GOLD, 16); metal(stats, 0xFFE77A, 0x9C6A10); stroke(stats, 0xF8C847, 1, 16);
@@ -180,9 +186,9 @@ lv_obj_t *zmk_display_status_screen(void) {
 #if ZMK_SPLIT_BLE_PERIPHERAL_COUNT > 1
     battery_value[1] = label(stats, "--%", &impact_20, INK); lv_obj_set_pos(battery_value[1], 195, 25);
 #endif
-    lv_obj_t *mod = box(stats, 10, 51, 240, 24, GRAPHITE, 7); metal(mod, 0x303632, 0x0D100E); stroke(mod, 0x5C625E, 1, 7);
+    lv_obj_t *mod = box(stats, 10, 49, 240, 28, GRAPHITE, 7); metal(mod, 0x303632, 0x0D100E); stroke(mod, 0x5C625E, 1, 7);
     for (int i = 0; i < 4; i++) {
-        modifier_key[i] = box(mod, 4 + i * 59, 3, 54, 18, GRAPHITE, 5);
+        modifier_key[i] = box(mod, 4 + i * 59, 2, 54, 24, GRAPHITE, 5);
         metal(modifier_key[i], 0x353A37, 0x111513);
         stroke(modifier_key[i], PAPER, 1, 5);
         draw_modifier_icon(modifier_key[i], i);
