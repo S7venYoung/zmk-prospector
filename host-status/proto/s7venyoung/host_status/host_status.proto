@@ -10,6 +10,7 @@ message Status {
   sint32 high_temperature_deci_c = 5;
   sint32 low_temperature_deci_c = 6;
   uint32 rain_probability = 7;
+  sint32 timezone_offset_minutes = 8;
 }
 
 message SetStatusRequest { Status status = 1; }
