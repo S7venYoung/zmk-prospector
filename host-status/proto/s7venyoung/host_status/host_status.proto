@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package s7venyoung.host_status;
+
+message Status {
+  uint32 unix_time = 1;
+  sint32 temperature_deci_c = 2;
+  uint32 weather_code = 3;
+  uint32 observed_at = 4;
+}
+
+message SetStatusRequest { Status status = 1; }
+message GetStatusRequest {}
+
+message Request {
+  oneof request_type {
+    SetStatusRequest set_status = 1;
+    GetStatusRequest get_status = 2;
+  }
+}
+
+message Ack { bool ok = 1; }
+
+message Response {
+  oneof response_type {
+    Ack ack = 1;
+    Status status = 2;
+  }
+}
