@@ -21,7 +21,6 @@ LV_FONT_DECLARE(impact_16);
 LV_FONT_DECLARE(impact_20);
 LV_FONT_DECLARE(impact_56);
 LV_FONT_DECLARE(Symbols_Semibold_28);
-LV_FONT_DECLARE(chinese_date_18);
 
 #define INK 0x101411
 #define GOLD 0xE4B52C
@@ -29,7 +28,7 @@ LV_FONT_DECLARE(chinese_date_18);
 #define GRAPHITE 0x202522
 #define GREEN 0x58E85D
 
-static lv_obj_t *time_value, *date_value, *temperature_value, *rain_value;
+static lv_obj_t *time_value, *date_value, *temperature_value;
 static lv_obj_t *sun_parts[5], *cloud_parts[3], *weather_rain[3];
 static lv_obj_t *battery_value[ZMK_SPLIT_BLE_PERIPHERAL_COUNT];
 static lv_obj_t *wpm_value;
@@ -82,21 +81,21 @@ static void civil_date(uint32_t seconds, int *year, unsigned *month, unsigned *d
 }
 static void host_update(struct zmk_host_status_changed state) {
     if (!time_value || !date_value || !temperature_value) return;
-    if (!state.unix_time) { lv_label_set_text(time_value, "--:--"); lv_label_set_text(date_value, "WAIT HOST"); lv_label_set_text(temperature_value, "--C"); lv_label_set_text(rain_value, "--%"); return; }
+    if (!state.unix_time) { lv_label_set_text(time_value, "--:--"); lv_label_set_text(date_value, "WAIT HOST"); lv_label_set_text(temperature_value, "--C"); return; }
     /* unix_time is UTC; the companion supplies the host's local offset. */
     uint32_t seconds = state.unix_time + state.timezone_offset_minutes * 60;
     uint32_t seconds_day = seconds % 86400;
     lv_label_set_text_fmt(time_value, "%02u:%02u", seconds_day / 3600, (seconds_day / 60) % 60);
     int temperature_abs = state.temperature_deci_c < 0 ? -state.temperature_deci_c : state.temperature_deci_c;
     lv_label_set_text_fmt(temperature_value, "%d.%dC", state.temperature_deci_c / 10, temperature_abs % 10);
-    lv_label_set_text_fmt(rain_value, "%u%%", state.rain_probability);
     bool rainy = state.weather_code >= 51 && state.weather_code <= 82;
     bool cloudy = !rainy && state.weather_code >= 1 && state.weather_code <= 48;
     for (int i = 0; i < 5; i++) visible(sun_parts[i], !rainy);
     for (int i = 0; i < 3; i++) { visible(cloud_parts[i], cloudy || rainy); visible(weather_rain[i], rainy); }
-    static const char *days[] = {"æ¥", "ä¸", "äº", "ä¸", "å", "äº", "å­"};
+    static const char *days[] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
+    static const char *months[] = {"JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"};
     int year; unsigned month, day, weekday; civil_date(seconds, &year, &month, &day, &weekday);
-    lv_label_set_text_fmt(date_value, "ææ%s %uæ%uæ¥", days[weekday], month, day);
+    lv_label_set_text_fmt(date_value, "%s %02u %s", days[weekday], day, months[month - 1]);
 }
 static struct zmk_host_status_changed host_get(const zmk_event_t *eh) {
     if (eh) return *as_zmk_host_status_changed(eh);
@@ -158,24 +157,19 @@ ZMK_SUBSCRIPTION(weather_clock_modifiers, zmk_keycode_state_changed);
 lv_obj_t *zmk_display_status_screen(void) {
     lv_obj_t *s = lv_obj_create(NULL); plain(s, INK); lv_obj_set_size(s, 280, 240); lv_obj_set_style_radius(s, 24, 0); metal(s, 0x161A17, 0x030403);
     /* Left weather icon: sun, cloud, and rain are composed from crisp LVGL primitives. */
-    sun_parts[0] = box(s, 25, 18, 16, 16, GOLD, LV_RADIUS_CIRCLE);
-    sun_parts[1] = box(s, 30, 10, 5, 6, GOLD, 2); sun_parts[2] = box(s, 30, 38, 5, 6, GOLD, 2);
-    sun_parts[3] = box(s, 17, 24, 6, 5, GOLD, 2); sun_parts[4] = box(s, 43, 24, 6, 5, GOLD, 2);
-    cloud_parts[0] = box(s, 18, 27, 31, 10, PAPER, 5);
-    cloud_parts[1] = box(s, 23, 21, 15, 15, PAPER, LV_RADIUS_CIRCLE);
-    cloud_parts[2] = box(s, 34, 24, 12, 12, PAPER, LV_RADIUS_CIRCLE);
-    weather_rain[0] = box(s, 23, 39, 3, 6, 0x73B9EE, 1);
-    weather_rain[1] = box(s, 32, 39, 3, 6, 0x73B9EE, 1);
-    weather_rain[2] = box(s, 41, 39, 3, 6, 0x73B9EE, 1);
+    sun_parts[0] = box(s, 18, 18, 14, 14, GOLD, LV_RADIUS_CIRCLE);
+    sun_parts[1] = box(s, 22, 12, 4, 4, GOLD, 2); sun_parts[2] = box(s, 22, 34, 4, 4, GOLD, 2);
+    sun_parts[3] = box(s, 12, 23, 4, 4, GOLD, 2); sun_parts[4] = box(s, 34, 23, 4, 4, GOLD, 2);
+    cloud_parts[0] = box(s, 12, 25, 26, 8, PAPER, 4);
+    cloud_parts[1] = box(s, 17, 20, 12, 12, PAPER, LV_RADIUS_CIRCLE);
+    cloud_parts[2] = box(s, 27, 23, 10, 10, PAPER, LV_RADIUS_CIRCLE);
+    weather_rain[0] = box(s, 17, 35, 2, 5, 0x73B9EE, 1);
+    weather_rain[1] = box(s, 24, 35, 2, 5, 0x73B9EE, 1);
+    weather_rain[2] = box(s, 31, 35, 2, 5, 0x73B9EE, 1);
     for (int i = 0; i < 3; i++) { visible(cloud_parts[i], false); visible(weather_rain[i], false); }
-    temperature_value = label(s, "--C", &impact_56, GOLD); lv_obj_set_width(temperature_value, 140); lv_obj_set_style_text_align(temperature_value, LV_TEXT_ALIGN_CENTER, 0); lv_obj_set_pos(temperature_value, 72, 5);
-    /* The droplets and percentage share one right-aligned baseline. */
-    (void)box(s, 208, 20, 10, 12, GOLD, LV_RADIUS_CIRCLE);
-    (void)box(s, 220, 13, 8, 10, GOLD, LV_RADIUS_CIRCLE);
-    (void)box(s, 230, 22, 7, 9, GOLD, LV_RADIUS_CIRCLE);
-    rain_value = label(s, "--%", &impact_20, GOLD); lv_obj_set_pos(rain_value, 238, 17);
-    lv_obj_t *date = box(s, 28, 58, 224, 28, GOLD, 15); metal(date, 0xFFE980, 0xA87514); stroke(date, 0xFFE08A, 1, 15); date_value = label(date, "WAIT HOST", &chinese_date_18, INK); lv_obj_center(date_value);
-    time_value = label(s, "00:00", &impact_56, PAPER); lv_obj_set_width(time_value, 260); lv_obj_set_style_text_align(time_value, LV_TEXT_ALIGN_CENTER, 0); lv_obj_set_pos(time_value, 10, 86);
+    temperature_value = label(s, "--C", &impact_20, GOLD); lv_obj_set_width(temperature_value, 150); lv_obj_set_style_text_align(temperature_value, LV_TEXT_ALIGN_CENTER, 0); lv_obj_set_pos(temperature_value, 65, 17);
+    lv_obj_t *date = box(s, 28, 53, 224, 28, GOLD, 15); metal(date, 0xFFE980, 0xA87514); stroke(date, 0xFFE08A, 1, 15); date_value = label(date, "WAIT HOST", &impact_20, INK); lv_obj_center(date_value);
+    time_value = label(s, "00:00", &impact_56, PAPER); lv_obj_set_width(time_value, 260); lv_obj_set_style_text_align(time_value, LV_TEXT_ALIGN_CENTER, 0); lv_obj_set_pos(time_value, 10, 93);
     lv_obj_t *stats = box(s, 10, 151, 260, 80, GOLD, 16); metal(stats, 0xFFE77A, 0x9C6A10); stroke(stats, 0xF8C847, 1, 16);
     lv_obj_t *wpm_caption = label(stats, "WPM", &impact_20, INK); lv_obj_set_pos(wpm_caption, 15, 4); wpm_value = label(stats, "0", &impact_20, INK); lv_obj_set_pos(wpm_value, 32, 25);
     lv_obj_t *divider1 = box(stats, 86, 10, 1, 32, INK, 0); lv_obj_set_style_bg_opa(divider1, LV_OPA_30, 0);
@@ -195,6 +189,7 @@ lv_obj_t *zmk_display_status_screen(void) {
         stroke(modifier_key[i], PAPER, 1, 5);
         static const char *symbols[] = {"\xF4\x80\x86\x94", "\xF4\x80\x86\x95", "\xF4\x80\x86\x8D", "\xF4\x80\x86\x9D"};
         modifier_symbol[i] = label(modifier_key[i], symbols[i], &Symbols_Semibold_28, PAPER);
+        lv_obj_set_style_transform_zoom(modifier_symbol[i], 210, 0);
         lv_obj_center(modifier_symbol[i]);
     }
     weather_clock_host_init(); weather_clock_battery_init(); weather_clock_wpm_init(); modifier_paint();
