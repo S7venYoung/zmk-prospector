@@ -140,29 +140,24 @@ static int modifier_listener(const zmk_event_t *eh) {
 ZMK_LISTENER(weather_clock_modifiers, modifier_listener);
 ZMK_SUBSCRIPTION(weather_clock_modifiers, zmk_keycode_state_changed);
 
-static void icon_line(lv_obj_t *parent, int x1, int y1, int x2, int y2, uint32_t color) {
-    lv_point_t *points = k_malloc(sizeof(lv_point_t) * 2);
-    if (!points) return;
-    points[0] = (lv_point_t){x1, y1}; points[1] = (lv_point_t){x2, y2};
-    lv_obj_t *line = lv_line_create(parent); lv_line_set_points(line, points, 2);
-    lv_obj_set_style_line_width(line, 2, 0); lv_obj_set_style_line_color(line, lv_color_hex(color), 0);
-    lv_obj_remove_flag(line, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);
-}
 static void draw_modifier_icon(lv_obj_t *key, int icon) {
     if (icon == 0) { /* Command: four loops joined as a compact clover. */
         (void)box(key, 15, 3, 5, 5, PAPER, 1); (void)box(key, 34, 3, 5, 5, PAPER, 1);
         (void)box(key, 15, 10, 5, 5, PAPER, 1); (void)box(key, 34, 10, 5, 5, PAPER, 1);
         (void)box(key, 19, 5, 16, 2, PAPER, 0); (void)box(key, 19, 11, 16, 2, PAPER, 0);
         (void)box(key, 25, 6, 2, 6, PAPER, 0);
-    } else if (icon == 1) { /* Option */
-        icon_line(key, 14, 13, 27, 4, PAPER); icon_line(key, 27, 4, 40, 13, PAPER);
-        icon_line(key, 17, 4, 14, 4, PAPER); icon_line(key, 40, 13, 37, 13, PAPER);
-    } else if (icon == 2) { /* Control */
-        icon_line(key, 16, 10, 27, 3, PAPER); icon_line(key, 27, 3, 38, 10, PAPER);
-        icon_line(key, 27, 3, 27, 15, PAPER);
+    } else if (icon == 1) { /* Option: a self-drawn crossed pair. */
+        (void)box(key, 16, 11, 5, 2, PAPER, 0); (void)box(key, 20, 8, 5, 2, PAPER, 0);
+        (void)box(key, 24, 5, 5, 2, PAPER, 0); (void)box(key, 28, 8, 5, 2, PAPER, 0);
+        (void)box(key, 32, 11, 5, 2, PAPER, 0);
+    } else if (icon == 2) { /* Control: caret with a central stem. */
+        (void)box(key, 17, 10, 5, 2, PAPER, 0); (void)box(key, 21, 7, 5, 2, PAPER, 0);
+        (void)box(key, 25, 4, 5, 2, PAPER, 0); (void)box(key, 29, 7, 5, 2, PAPER, 0);
+        (void)box(key, 33, 10, 5, 2, PAPER, 0); (void)box(key, 26, 6, 2, 9, PAPER, 0);
     } else { /* Shift */
-        icon_line(key, 27, 2, 27, 15, PAPER); icon_line(key, 18, 9, 27, 2, PAPER);
-        icon_line(key, 36, 9, 27, 2, PAPER); icon_line(key, 18, 15, 36, 15, PAPER);
+        (void)box(key, 25, 2, 5, 3, PAPER, 0); (void)box(key, 21, 5, 13, 3, PAPER, 0);
+        (void)box(key, 18, 8, 19, 3, PAPER, 0); (void)box(key, 25, 10, 5, 5, PAPER, 0);
+        (void)box(key, 18, 15, 19, 2, PAPER, 0);
     }
 }
 
