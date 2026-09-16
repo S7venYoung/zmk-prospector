@@ -1,24 +1,7 @@
-# Receiver-only build; theme/walle-codex
 ---
 include:
-  # Receiver build with the Codex-first dashboard, shared touch settings, token unit visibility, and coordinate-based horizontal swipes (v20; receiver-only matrix, simplified weather header).
-  - board: xiao_ble//zmk
-    shield: eyelash_sofle_prospector_dongle prospector_adapter prospector_theme_codex_status
-    snippet: studio-rpc-usb-uart
-    cmake-args: -DCONFIG_ZMK_STUDIO=y -DCONFIG_ZMK_STUDIO_LOCKING=n
-    artifact-name: eyelash_sofle_prospector_dongle
-  # Standalone WALL-E dashboard build; keeps the Codex data dashboard intact.
-  - board: xiao_ble//zmk
-    shield: eyelash_sofle_prospector_dongle prospector_adapter prospector_theme_walle
-    snippet: studio-rpc-usb-uart
-    cmake-args: -DCONFIG_ZMK_STUDIO=y -DCONFIG_ZMK_STUDIO_LOCKING=n
-    artifact-name: eyelash_sofle_prospector_dongle_walle
-  # Weather Clock dashboard: time/weather from the native companion, plus local keyboard state.
-  - board: xiao_ble//zmk
-    shield: eyelash_sofle_prospector_dongle prospector_adapter prospector_theme_weather_clock
-    snippet: studio-rpc-usb-uart
-    cmake-args: -DCONFIG_ZMK_STUDIO=y -DCONFIG_ZMK_STUDIO_LOCKING=n
-    artifact-name: eyelash_sofle_prospector_dongle_weather_clock
-  - board: xiao_ble//zmk
-    shield: settings_reset
-    artifact-name: settings_reset_xiao_ble
+  # Standalone BLE scanner with touch. It does not act as a keyboard dongle.
+  - board: xiao_ble/nrf52840/zmk
+    shield: prospector_scanner
+    cmake-args: -DEXTRA_CONF_FILE=../../config/prospector_scanner_touch.conf
+    artifact-name: prospector_scanner_touch
