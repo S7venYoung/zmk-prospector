@@ -1,3 +1,4 @@
+# Receiver-only build; theme/walle-codex
 ---
 include:
   # Receiver build with the Codex-first dashboard, shared touch settings, token unit visibility, and coordinate-based horizontal swipes (v20; receiver-only matrix, simplified weather header).
