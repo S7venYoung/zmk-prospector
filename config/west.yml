@@ -79,7 +79,7 @@ manifest:
       revision: main
     - name: prospector-zmk-module
       remote: s7venyoung
-      revision: core/zephyr-4-1
+      revision: scanner-mode
     - name: zmk-prospector-themes
       remote: s7venyoung
       repo-path: zmk-prospector
