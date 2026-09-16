@@ -14,6 +14,8 @@ manifest:
       url-base: https://github.com/tokyo2006
     - name: carrefinho
       url-base: https://github.com/carrefinho
+    - name: s7venyoung
+      url-base: https://github.com/S7venYoung
     - name: englmaxi
       url-base: https://github.com/englmaxi
   projects:
@@ -76,7 +78,7 @@ manifest:
       remote: cormoran
       revision: main
     - name: prospector-zmk-module
-      remote: carrefinho
+      remote: s7venyoung
       revision: core/zephyr-4-1
   self:
     path: config
