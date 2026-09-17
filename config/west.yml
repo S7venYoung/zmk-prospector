@@ -80,7 +80,7 @@ manifest:
     - name: prospector-zmk-module
       remote: s7venyoung
       # Pin the scanner renderer: Actions cache must never silently reuse an older branch head.
-      revision: 7dcc27e66f4795bcd4bd71ddb4515c5529cce4ea
+      revision: b3430ea7dc67de7f65a69d172f26c22a5ce8487f
     - name: zmk-prospector-themes
       remote: s7venyoung
       repo-path: zmk-prospector
