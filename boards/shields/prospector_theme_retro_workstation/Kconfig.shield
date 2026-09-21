@@ -1,0 +1,2 @@
+config SHIELD_PROSPECTOR_THEME_RETRO_WORKSTATION
+    def_bool $(shields_list_contains,prospector_theme_retro_workstation)

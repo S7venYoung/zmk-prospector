@@ -1,0 +1,4 @@
+config ZMK_PROSPECTOR_THEME_RETRO_WORKSTATION
+    bool "Retro Workstation theme"
+    depends on ZMK_DISPLAY
+    default n

@@ -10,5 +10,6 @@ config ZMK_PROSPECTOR_HOST_STATUS
 rsource "themes/walle/Kconfig"
 rsource "themes/codex-status/Kconfig"
 rsource "themes/weather-clock/Kconfig"
+rsource "themes/retro-workstation/Kconfig"
 
 endmenu
