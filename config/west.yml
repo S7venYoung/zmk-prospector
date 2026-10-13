@@ -58,6 +58,10 @@ manifest:
     - name: zmk-feature-device-info
       remote: cormoran
       revision: main
+    - name: zmk-module-devtool
+      remote: cormoran
+      revision: main
+      import: true
     - name: zmk-feature-runtime-combo
       remote: cormoran
       revision: main

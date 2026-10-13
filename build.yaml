@@ -3,5 +3,6 @@ include:
   # Standalone BLE scanner with touch. It does not act as a keyboard dongle.
   - board: xiao_ble/nrf52840/zmk
     shield: prospector_scanner
+    snippet: studio-rpc-usb-uart
     cmake-args: -DEXTRA_CONF_FILE=../../config/prospector_scanner_touch.conf
     artifact-name: prospector_scanner_touch
