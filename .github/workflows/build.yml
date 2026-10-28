@@ -41,11 +41,11 @@ jobs:
             zmk-behavior-*
             zmk-stdlib
           key: ms2-dya-v1-${{ runner.os }}-${{ hashFiles('zmk-prospector/west.yml') }}
-      - name: Build kblade ms2 with DYA and five runtime themes
+      - name: Build kblade ms2 with DYA and nine runtime themes
         run: bash zmk-prospector/scripts/build-ms2-dya.sh "$GITHUB_WORKSPACE"
       - uses: actions/upload-artifact@v4
         with:
-          name: corne_ms2_dya_five_themes
+          name: corne_ms2_dya_nine_themes
           path: |
             build-ms2-dya/zephyr/zmk.uf2
             build-ms2-dya/zephyr/zmk.elf

@@ -2,4 +2,4 @@ include:
   - board: kblade//zmk
     shield: prospector_ms2 corne_dongle
     snippet: studio-rpc-usb-uart zmk-usb-logging
-    artifact-name: corne_ms2_dya_five_themes
+    artifact-name: corne_ms2_dya_nine_themes

@@ -8,6 +8,8 @@
 #include "radii_layout.h"
 #include "yads_layout.h"
 #include "industrial_layout.h"
+#include "segment_layout.h"
+#include "dashboard_layouts.h"
 #include <string.h>
 #include <zephyr/sys/util.h>
 #include <stdio.h>
@@ -24,7 +26,8 @@ static struct prospector_keyboard_data cached;
 static bool supported(prospector_layout_t style) {
     return style == PROSPECTOR_LAYOUT_FIELD || style == PROSPECTOR_LAYOUT_OPERATOR ||
            style == PROSPECTOR_LAYOUT_RADII || style == PROSPECTOR_LAYOUT_YADS2 ||
-           style == PROSPECTOR_LAYOUT_INDUSTRIAL;
+           style == PROSPECTOR_LAYOUT_INDUSTRIAL || style == PROSPECTOR_LAYOUT_SEGMENT || style == PROSPECTOR_LAYOUT_ORBIT ||
+           style == PROSPECTOR_LAYOUT_SPLIT || style == PROSPECTOR_LAYOUT_MONO;
 }
 static void create_layout(void) {
     switch ((int)current_layout) {
@@ -33,6 +36,10 @@ static void create_layout(void) {
     case PROSPECTOR_LAYOUT_RADII: radii_layout_create(parent_obj); break;
     case PROSPECTOR_LAYOUT_YADS2: yads_layout_create(parent_obj); break;
     case PROSPECTOR_LAYOUT_INDUSTRIAL: industrial_layout_create(parent_obj); break;
+    case PROSPECTOR_LAYOUT_SEGMENT: segment_layout_create(parent_obj); break;
+    case PROSPECTOR_LAYOUT_ORBIT:
+    case PROSPECTOR_LAYOUT_SPLIT:
+    case PROSPECTOR_LAYOUT_MONO: dashboard_layout_create(parent_obj,current_layout); break;
     default: break;
     }
 }
@@ -43,6 +50,10 @@ static void destroy_layout(void) {
     case PROSPECTOR_LAYOUT_RADII: radii_layout_destroy(); break;
     case PROSPECTOR_LAYOUT_YADS2: yads_layout_destroy(); break;
     case PROSPECTOR_LAYOUT_INDUSTRIAL: industrial_layout_destroy(); break;
+    case PROSPECTOR_LAYOUT_SEGMENT: segment_layout_destroy(); break;
+    case PROSPECTOR_LAYOUT_ORBIT:
+    case PROSPECTOR_LAYOUT_SPLIT:
+    case PROSPECTOR_LAYOUT_MONO: dashboard_layout_destroy(); break;
     default: break;
     }
 }
@@ -87,6 +98,12 @@ static void paint(void) {
     case PROSPECTOR_LAYOUT_INDUSTRIAL:
         industrial_layout_update(&cached, name);
         break;
+    case PROSPECTOR_LAYOUT_SEGMENT:
+        segment_layout_update(&cached, name);
+        break;
+    case PROSPECTOR_LAYOUT_ORBIT:
+    case PROSPECTOR_LAYOUT_SPLIT:
+    case PROSPECTOR_LAYOUT_MONO: dashboard_layout_update(&cached,name); break;
     default: break;
     }
 }
@@ -127,12 +144,12 @@ void prospector_layouts_update(const struct prospector_keyboard_data *data) {
     paint();
 }
 void prospector_layouts_next(void) {
-    prospector_layouts_set_style(current_layout == PROSPECTOR_LAYOUT_INDUSTRIAL
+    prospector_layouts_set_style(current_layout == PROSPECTOR_LAYOUT_MONO
         ? PROSPECTOR_LAYOUT_FIELD : (prospector_layout_t)(current_layout + 1));
 }
 void prospector_layouts_prev(void) {
     prospector_layouts_set_style(current_layout == PROSPECTOR_LAYOUT_FIELD
-        ? PROSPECTOR_LAYOUT_INDUSTRIAL : (prospector_layout_t)(current_layout - 1));
+        ? PROSPECTOR_LAYOUT_MONO : (prospector_layout_t)(current_layout - 1));
 }
 void prospector_layouts_cycle_palette(void) {
     if (!initialized) return;
@@ -150,6 +167,10 @@ const char *prospector_layouts_get_name(prospector_layout_t style) {
     case PROSPECTOR_LAYOUT_RADII: return "Radii";
     case PROSPECTOR_LAYOUT_YADS2: return "YADS";
     case PROSPECTOR_LAYOUT_INDUSTRIAL: return "Industrial";
+    case PROSPECTOR_LAYOUT_SEGMENT: return "Segment";
+    case PROSPECTOR_LAYOUT_ORBIT: return "Orbit";
+    case PROSPECTOR_LAYOUT_SPLIT: return "Split";
+    case PROSPECTOR_LAYOUT_MONO: return "Mono";
     default: return "Classic";
     }
 }

@@ -13,6 +13,8 @@ if(CONFIG_ZMK_PROSPECTOR_SCANNER_ORIGINAL)
   target_sources(app PRIVATE
       src/prospector_layouts.c src/field_layout.c
       src/operator_layout.c src/radii_layout.c
+      src/dashboard_layouts.c src/dashboard_numeric_52.c src/dashboard_base_72.c src/dashboard_mono_96.c
+      src/segment_layout.c src/segment_18.c src/segment_26.c src/segment_36.c src/segment_48.c src/segment_80.c
       src/yads_layout.c src/yads_history.c src/yads_input.c src/industrial_layout.c src/industrial_numeric_32.c src/industrial_battery_32.c src/industrial_display_56.c src/industrial_brand_28.c
       ${CMAKE_CURRENT_SOURCE_DIR}/fonts/impact_16.c
       ${CMAKE_CURRENT_SOURCE_DIR}/fonts/impact_20.c)

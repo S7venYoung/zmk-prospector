@@ -1,4 +1,4 @@
-# Corne ms2 Prospector Dongle — DYA + 五主题
+# Corne ms2 Prospector Dongle — DYA + 九主题
 
 目标硬件使用 `kblade//zmk`，Shield 为 `prospector_ms2 corne_dongle`。
 保留 ms2 的 ST7789V 接线、280×240 横屏方向、x-offset=20、背光驱动及分区布局，
@@ -6,7 +6,7 @@
 
 ## 可引用主题模块
 
-五个主题统一位于 [display-themes/](display-themes/README.md)，包含独立 ZMK 模块入口、
+九个主题统一位于 [display-themes/](display-themes/README.md)，包含独立 ZMK 模块入口、
 字体、DYA 适配、接入示例和主机测试。原 `themes/` 目录已删除。
 
 ## DYA 功能
@@ -30,7 +30,7 @@ Runtime Sensor Rotate 预定义音量和滚动行为，未虚构物理 sensor。
 
 | 设置 | 值与用途 |
 | --- | --- |
-| `display_theme` | `0` FIELD、`1` OPERATOR、`2` RADII、`3` YADS、`4` INDUSTRIAL |
+| `display_theme` | `0` FIELD、`1` OPERATOR、`2` RADII、`3` YADS、`4` INDUSTRIAL、`5` SEGMENT、`6` ORBIT、`7` SPLIT、`8` MONO |
 | `display_palette` | `0`–`3`：前三个原版主题的四套配色；YADS 固定黑底白字，INDUSTRIAL 固定黄黑配色 |
 | `display_brightness` | `1`–`100`：背光亮度，沿用 ms2 电路的 PWM 反向逻辑 |
 | `left_hand_slot` | `0` / `1`：哪一个 split source 是左手，默认 `0` |
