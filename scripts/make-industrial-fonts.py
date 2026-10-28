@@ -61,3 +61,5 @@ def generate(name, codepoints, sx, sy, line_height, baseline):
 generate('industrial_numeric_32', [32, 37, 45, 46] + list(range(48, 58)), 32/56, 32/56, 34, 5)
 generate('industrial_display_56', list(range(32, 96)), 1.70, 1, 58, 9)
 generate('industrial_brand_28', sorted(set(map(ord, ' .CORNE'))), .5, .5, 29, 5)
+
+generate('industrial_battery_32', [32, 45] + list(range(48, 58)), 0.70*32/56, 32/56, 34, 5)

@@ -13,7 +13,7 @@ if(CONFIG_ZMK_PROSPECTOR_SCANNER_ORIGINAL)
   target_sources(app PRIVATE
       src/prospector_layouts.c src/field_layout.c
       src/operator_layout.c src/radii_layout.c
-      src/yads_layout.c src/yads_history.c src/yads_input.c src/industrial_layout.c src/industrial_numeric_32.c src/industrial_display_56.c src/industrial_brand_28.c
+      src/yads_layout.c src/yads_history.c src/yads_input.c src/industrial_layout.c src/industrial_numeric_32.c src/industrial_battery_32.c src/industrial_display_56.c src/industrial_brand_28.c
       ${CMAKE_CURRENT_SOURCE_DIR}/../walle/src/impact_16.c
       ${CMAKE_CURRENT_SOURCE_DIR}/../walle/src/impact_20.c)
   target_sources_ifdef(CONFIG_ZMK_PROSPECTOR_DYA_SETTINGS app PRIVATE src/dya_settings.c)

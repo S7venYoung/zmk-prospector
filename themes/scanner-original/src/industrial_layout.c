@@ -15,6 +15,7 @@ LV_FONT_DECLARE(impact_20);
 LV_FONT_DECLARE(industrial_display_56);
 LV_FONT_DECLARE(industrial_brand_28);
 LV_FONT_DECLARE(industrial_numeric_32);
+LV_FONT_DECLARE(industrial_battery_32);
 
 #define INK 0x0D1310
 #define GOLD 0xFFCA13
@@ -84,11 +85,11 @@ static void artwork(lv_event_t *event) {
 }
 static void battery_card(int hand, int x) {
     lv_obj_t *card = box(root, x, 151, 120, 42, PAPER, 9);
-    lv_obj_t *track = box(card, 7, 9, 32, 24, INK, 3);
-    box(card, 39, 16, 3, 10, INK, 1);
+    lv_obj_t *track = box(card, 7, 9, 60, 24, INK, 3);
+    box(card, 67, 16, 3, 10, INK, 1);
     for (int i = 0; i < 8; i++)
-        segments[hand][i] = box(track, 4 + i * 3, 3, 2, 18, 0xB1B4AC, 0);
-    battery[hand] = text(card, 44, 4, 70, &industrial_numeric_32, INK, "--%");
+        segments[hand][i] = box(track, 3 + i * 7, 3, 6, 18, 0xB1B4AC, 0);
+    battery[hand] = text(card, 72, 4, 44, &industrial_battery_32, INK, "--");
 }
 lv_obj_t *industrial_layout_create(lv_obj_t *parent) {
     root = box(parent, 0, 0, 280, 240, INK, 0);
@@ -132,6 +133,14 @@ void industrial_layout_update(const struct prospector_keyboard_data *data, const
     for (; name[n] && n < sizeof(upper) - 1; n++)
         upper[n] = name[n] >= 'a' && name[n] <= 'z' ? name[n] - 'a' + 'A' : name[n];
     upper[n] = '\0';
+    /* Keep stock verbose layer labels readable in the display font. */
+    if (!strcmp(upper, "DEFAULT LAYER") || !strcmp(upper, "BASE LAYER"))
+        snprintf(upper, sizeof(upper), "BASE");
+    else if (!strcmp(upper, "LOWER LAYER"))
+        snprintf(upper, sizeof(upper), "LOWER");
+    else if (!strcmp(upper, "RAISE LAYER"))
+        snprintf(upper, sizeof(upper), "RAISE");
+    n = strlen(upper);
     if (strcmp(layer_text, upper)) {
         memcpy(layer_text, upper, n + 1);
         const lv_font_t *font = &industrial_display_56; lv_point_t size;
@@ -159,8 +168,8 @@ void industrial_layout_update(const struct prospector_keyboard_data *data, const
     uint8_t levels[2] = {data->battery_level, data->peripheral_battery[0]};
     for (int hand = 0; hand < 2; hand++) {
         bool valid = data->has_dynamic_data && levels[hand] > 0 && levels[hand] <= 100;
-        if (valid) snprintf(battery_text[hand], sizeof(battery_text[hand]), "%u%%", levels[hand]);
-        else snprintf(battery_text[hand], sizeof(battery_text[hand]), "--%%");
+        if (valid) snprintf(battery_text[hand], sizeof(battery_text[hand]), "%u", levels[hand]);
+        else snprintf(battery_text[hand], sizeof(battery_text[hand]), "--");
         lv_label_set_text_static(battery[hand], battery_text[hand]);
         uint32_t color = valid ? (levels[hand] < 20 ? AMBER : GREEN) : MUTED;
         for (int i = 0; i < 8; i++)
