@@ -16,8 +16,6 @@ manifest:
       url-base: https://github.com/carrefinho
     - name: s7venyoung
       url-base: https://github.com/S7venYoung
-    - name: kbladewht
-      url-base: https://github.com/kbladewht
     - name: englmaxi
       url-base: https://github.com/englmaxi
   projects:
@@ -80,8 +78,5 @@ manifest:
       remote: cormoran
       revision: 9938a2c73c06d6e65ba2c0b68c9aa044a467eafc
       import: true
-    - name: prospector-zmk-module
-      remote: kbladewht
-      revision: 37146e417cd95ec95ab144ed9ebb6632da06bd8e
   self:
     path: zmk-prospector

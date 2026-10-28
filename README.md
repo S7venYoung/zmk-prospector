@@ -1,5 +1,11 @@
 # Corne ms2 Prospector Dongle — DYA + 九主题
 
+## 仓库内硬件定义
+
+kblade board 和 ms2 配套模块已固定在 [hardware/prospector-zmk-module/](hardware/prospector-zmk-module/)。
+两个构建脚本均引用本地目录，west 不再拉取此硬件模块。
+板名、引脚、分区保持原样；来源与更新说明见 [hardware/UPSTREAM.md](hardware/UPSTREAM.md)。
+
 目标硬件使用 `kblade//zmk`，Shield 为 `prospector_ms2 corne_dongle`。
 保留 ms2 的 ST7789V 接线、280×240 横屏方向、x-offset=20、背光驱动及分区布局，
 接入 Prospector Dongle 项目所用的 `cormoran/zmk main+dya` 核心。

@@ -1,0 +1,56 @@
+# Prospector Scanner - Using display_test Kconfig.defconfig for debugging
+
+
+
+config ZMK_KEYBOARD_NAME
+    default "pro-rece2"
+
+config ZMK_DISPLAY
+    default n
+
+config PROSPECTOR_SCANNER_TASK_WATCHDOG
+    bool "Software watchdog that reboots the scanner if the display or core thread stops"
+    default n
+    select TASK_WDT
+    help
+      Arms a pure-software task watchdog (no hardware WDT, so firmware
+      updates via the UF2 bootloader are unaffected). If the LVGL display
+      thread or the system workqueue liveness work (s7789_update.c) stops
+      running for 30s the device records the hang and reboots instead of
+      sitting frozen. The record is reported in the boot log
+      ("Recovered from crash").
+
+# MIPI DBI for ST7789V (bool required for Zephyr 3.5.0 compatibility)
+config MIPI_DBI
+    bool
+    default y
+
+config SPI
+    default y
+
+# ST7789V pixel format
+choice ST7789V_PIXEL_FORMAT
+    default ST7789V_RGB565
+endchoice
+
+# LVGL basic settings
+config LV_Z_VDB_SIZE
+    default 100
+
+config LV_DPI_DEF
+    default 261
+
+config LV_Z_BITS_PER_PIXEL
+    default 16
+
+choice LV_COLOR_DEPTH
+    default LV_COLOR_DEPTH_16
+endchoice
+
+config LV_COLOR_16_SWAP
+    default y
+
+# Step 3: Use CUSTOM screen (like display_test)
+choice ZMK_DISPLAY_STATUS_SCREEN
+    default ZMK_DISPLAY_STATUS_SCREEN_CUSTOM
+endchoice

@@ -1,0 +1,15 @@
+{
+  "upstream_commit": "37146e417cd95ec95ab144ed9ebb6632da06bd8e",
+  "files": {
+    "boards/kblade/seeed_xiao_connector.dtsi": "dc718aaf0d291149a52ba937f2d1ee7254e63f9beacf2156a0f47b64ef3e8cb7",
+    "boards/kblade/kblade.dts": "2c965929d12758328286a44fcee6b2009965b9edd27d0f65f6cf25247621da4d",
+    "boards/kblade/kblade-pinctrl.dtsi": "6e35e813286015a3ffbba51abcf8d0f5ea042d6e2299f800bb6ef1cc22860709",
+    "boards/kblade/nrf52840_partition_uf2_sdv7.dtsi": "83e9894fe0fbadb8700c4920b4fb9aef5a3f485c68732b273299a39461b10d03",
+    "boards/kblade/Kconfig.kblade": "042637965ad5d02f7a5708a3120b16fd6d3994893dab427facd7b164ca6a62ba",
+    "boards/kblade/kblade_zmk_defconfig": "b1e8f9d6a9deb9d496543c280386817554f1cd4d8f093edd5a122530ac98a7b6",
+    "boards/kblade/board.yml": "9685826fd6be799c5d82f7f99dcbcbe481bff59af9258a079bfe36dac99815ca",
+    "boards/kblade/kblade_zmk.dts": "34b68224555460f2ea0ec74de18efcf49dfe57f1daf6b71e649506c27c73fa04",
+    "boards/kblade/kblade_common.dtsi": "82428dd13d2ce932c6010cdf40518b6b01955264033d88ba37e22a334e88888f",
+    "boards/kblade/kblade.zmk.yml": "85e57cf4282936da54e73f09cea1e992e2bd7f6d036376586a9dde65a8110067"
+  }
+}

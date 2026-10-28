@@ -18,7 +18,6 @@ jobs:
             zmk
             zephyr
             modules
-            prospector-zmk-module
             zmk-feature-*
             zmk-module-*
             zmk-behavior-*
@@ -35,7 +34,6 @@ jobs:
             zmk
             zephyr
             modules
-            prospector-zmk-module
             zmk-feature-*
             zmk-module-*
             zmk-behavior-*
