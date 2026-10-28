@@ -27,6 +27,9 @@ LV_FONT_DECLARE(industrial_battery_32);
 
 static lv_obj_t *root, *layer, *wpm, *wpm_unit, *output, *battery[2], *segments[2][8];
 static lv_obj_t *modifier_keys[4], *modifier_symbols[4];
+static bool rendered;
+static uint8_t last_wpm, last_output, last_levels[2], last_modifiers;
+static bool last_valid[2];
 static char layer_text[32], wpm_text[4], output_text[4], battery_text[2][6];
 
 static void plain(lv_obj_t *o, uint32_t color) {
@@ -92,6 +95,7 @@ static void battery_card(int hand, int x) {
     battery[hand] = text(card, 72, 4, 44, &industrial_battery_32, INK, "--");
 }
 lv_obj_t *industrial_layout_create(lv_obj_t *parent) {
+    rendered = false;
     root = box(parent, 0, 0, 280, 240, INK, 0);
     box(root, 0, 0, 280, 55, GOLD, 0);
     eye(root, 20); eye(root, 56);
@@ -155,19 +159,29 @@ void industrial_layout_update(const struct prospector_keyboard_data *data, const
         lv_obj_set_y(layer, 56 + (58 - font->line_height) / 2);
         lv_label_set_text_static(layer, layer_text);
     }
-    snprintf(wpm_text, sizeof(wpm_text), "%u", data->wpm_value);
-    lv_label_set_text_static(wpm, wpm_text);
-    lv_point_t number_size, unit_size;
-    lv_text_get_size(&number_size, wpm_text, &industrial_numeric_32, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
-    lv_text_get_size(&unit_size, "WPM", &impact_20, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
-    int start = (280 - number_size.x - 8 - unit_size.x) / 2;
-    lv_obj_set_width(wpm, number_size.x); lv_obj_set_x(wpm, start);
-    lv_obj_set_width(wpm_unit, unit_size.x); lv_obj_set_x(wpm_unit, start + number_size.x + 8);
-    snprintf(output_text, sizeof(output_text), "%s", data->usb_connected ? "USB" : data->ble_connected ? "BLE" : "OFF");
-    lv_label_set_text_static(output, output_text);
+    if (!rendered || last_wpm != data->wpm_value) {
+        snprintf(wpm_text, sizeof(wpm_text), "%u", data->wpm_value);
+        lv_label_set_text_static(wpm, wpm_text);
+        lv_point_t number_size, unit_size;
+        lv_text_get_size(&number_size, wpm_text, &industrial_numeric_32, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
+        lv_text_get_size(&unit_size, "WPM", &impact_20, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
+        int start = (280 - number_size.x - 8 - unit_size.x) / 2;
+        lv_obj_set_width(wpm, number_size.x); lv_obj_set_x(wpm, start);
+        lv_obj_set_width(wpm_unit, unit_size.x); lv_obj_set_x(wpm_unit, start + number_size.x + 8);
+        last_wpm = data->wpm_value;
+    }
+    uint8_t output_state = data->usb_connected ? 2 : data->ble_connected ? 1 : 0;
+    if (!rendered || last_output != output_state) {
+        snprintf(output_text, sizeof(output_text), "%s", output_state == 2 ? "USB" : output_state == 1 ? "BLE" : "OFF");
+        lv_label_set_text_static(output, output_text);
+        last_output = output_state;
+    }
     uint8_t levels[2] = {data->battery_level, data->peripheral_battery[0]};
     for (int hand = 0; hand < 2; hand++) {
         bool valid = data->has_dynamic_data && levels[hand] > 0 && levels[hand] <= 100;
+        if (rendered && last_valid[hand] == valid &&
+            (!valid || last_levels[hand] == levels[hand])) continue;
+        last_valid[hand] = valid; last_levels[hand] = levels[hand];
         if (valid) snprintf(battery_text[hand], sizeof(battery_text[hand]), "%u", levels[hand]);
         else snprintf(battery_text[hand], sizeof(battery_text[hand]), "--");
         lv_label_set_text_static(battery[hand], battery_text[hand]);
@@ -179,9 +193,12 @@ void industrial_layout_update(const struct prospector_keyboard_data *data, const
     static const uint8_t masks[] = {0x88, 0x44, 0x11, 0x22};
     for (int i = 0; i < 4; i++) {
         bool active = (data->modifier_flags & masks[i]) != 0;
+        if (rendered && active == ((last_modifiers & masks[i]) != 0)) continue;
         lv_obj_set_style_bg_color(modifier_keys[i], lv_color_hex(active ? GOLD : PANEL), 0);
         lv_obj_set_style_text_color(modifier_symbols[i], lv_color_hex(active ? INK : MUTED), 0);
     }
+    last_modifiers = data->modifier_flags;
+    rendered = true;
 }
 void industrial_layout_destroy(void) {
     if (root) lv_obj_delete(root);

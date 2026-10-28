@@ -27,9 +27,11 @@ void yads_input_text(uint8_t layer,const char *name,char out[32]) {
     yads_history_text(&input,layer,host_long_name ? "VERY_LONG_LAYER_NAME" : name,host_ticks,out);
 }
 extern void test_dya_contract(void);
+static unsigned flush_count;
 static uint8_t frame[280 * 240 * 3];
 static uint8_t draw_buf[280 * 32 * 3] __attribute__((aligned(64)));
 static void flush(lv_display_t *d, const lv_area_t *a, uint8_t *p) {
+    flush_count++;
     for (int y=a->y1;y<=a->y2;y++) for(int x=a->x1;x<=a->x2;x++) {
         /* LVGL RGB888 memory order is B,G,R. */
         unsigned src=((y-a->y1)*(a->x2-a->x1+1)+(x-a->x1))*3;
@@ -159,6 +161,13 @@ int main(int argc,char **argv) {
                 for(int t=0;t<5;t++){host_ticks+=100;lv_tick_inc(100);lv_timer_handler();}
                 lv_obj_update_layout(screen);text_count=0;inspect(screen,names[style-1]);check_overlaps(names[style-1]);
                 if(style==5)assert(verify_industrial_modifiers(screen,data.modifier_flags)==4);
+                if(style==5 && state!=3) {
+                    lv_refr_now(d); unsigned before=flush_count;
+                    for(int repeat=0;repeat<10;repeat++) {
+                        prospector_layouts_update(&data);lv_refr_now(d);
+                    }
+                    assert(flush_count==before); /* Idle snapshots must not redraw. */
+                }
                 if(palette==0&&argc>1) {
                     lv_refr_now(d);char path[1024];snprintf(path,sizeof(path),"%s/%s-%d.ppm",argv[1],names[style-1],state);
                     FILE*f=fopen(path,"wb");fprintf(f,"P6\n280 240\n255\n");fwrite(frame,1,sizeof(frame),f);fclose(f);
