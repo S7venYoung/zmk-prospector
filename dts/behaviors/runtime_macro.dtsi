@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2026 cormoran
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+/ {
+    behaviors {
+        rmacro: runtime_macro {
+            compatible = "cormoran,zmk-behavior-runtime-macro";
+            #binding-cells = <1>;
+            display-name = "Runtime Macro";
+        };
+    };
+};

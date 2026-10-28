@@ -12,4 +12,20 @@ rsource "themes/codex-status/Kconfig"
 rsource "themes/weather-clock/Kconfig"
 rsource "themes/retro-workstation/Kconfig"
 
+rsource "themes/scanner-original/Kconfig"
+
 endmenu
+
+config ZMK_KEY_STATS
+    bool "Physical key press statistics"
+    depends on SETTINGS
+    default n
+config ZMK_KEY_STATS_SAVE_DEBOUNCE_SECONDS
+    int "Key statistics save debounce"
+    default 30
+    depends on ZMK_KEY_STATS
+config ZMK_KEY_STATS_SAVE_PRESS_INTERVAL
+    int "Key statistics press save interval"
+    default 50
+    depends on ZMK_KEY_STATS
+rsource "modules/zmk-feature-runtime-macro/Kconfig"

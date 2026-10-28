@@ -1,0 +1,87 @@
+manifest:
+  version: 1.2
+  defaults:
+    remote: cormoran
+    revision: main
+  remotes:
+    - name: cormoran
+      url-base: https://github.com/cormoran
+    - name: zmkfirmware
+      url-base: https://github.com/zmkfirmware
+    - name: gpeye
+      url-base: https://github.com/GPeye
+    - name: tokyo2006
+      url-base: https://github.com/tokyo2006
+    - name: carrefinho
+      url-base: https://github.com/carrefinho
+    - name: s7venyoung
+      url-base: https://github.com/S7venYoung
+    - name: kbladewht
+      url-base: https://github.com/kbladewht
+    - name: englmaxi
+      url-base: https://github.com/englmaxi
+  projects:
+    - name: zmk
+      remote: cormoran
+      revision: e5c9b6915b56801193e359dd9bad4a167ce0d1b8
+      clone-depth: 1
+      import:
+        file: app/west.yml
+    - name: zephyr
+      remote: cormoran
+      revision: v4.1.0+zmk-fixes+nrf-half-duplex-uart
+      clone-depth: 1
+      import:
+        name-blocklist:
+          - ci-tools
+          - hal_altera
+          - hal_cypress
+          - hal_infineon
+          - hal_microchip
+          - hal_nxp
+          - hal_openisa
+          - hal_xtensa
+          - hal_st
+          - hal_ti
+          - loramac-node
+          - mcuboot
+          - mcumgr
+          - net-tools
+          - openthread
+          - edtt
+          - trusted-firmware-m
+          - chre
+    - name: zmk-feature-custom-settings
+      remote: cormoran
+      revision: c6a7fef3a3be3d3ace5de9a4b0628c6418cd1f3f
+    - name: zmk-feature-device-info
+      remote: cormoran
+      revision: 8cedd2dd9f04e19ea5a17b94914dd47a09d8db11
+    - name: zmk-feature-runtime-combo
+      remote: cormoran
+      revision: d9490e7b5d41c516221d131241009e81740efcee
+      import: true
+    - name: zmk-behavior-runtime-sensor-rotate
+      remote: cormoran
+      revision: 8b1125ed676c1f5e14145d217984f33d0ebdcef4
+    - name: zmk-module-ble-management
+      remote: cormoran
+      revision: 57738cc4fc6ba80e82a7ac57741a0339cb186cd4
+    - name: zmk-module-battery-history
+      remote: cormoran
+      revision: 307755dd2ad4d320e14de162e8e5ef018f29d929
+    - name: zmk-module-settings-rpc
+      remote: cormoran
+      revision: 78f86df9e6c5edaf57bef3ccbd7f360cfdf49291
+    - name: zmk-module-runtime-input-processor
+      remote: cormoran
+      revision: decf628d7ce5ed95b520c650824c28ea9de649c1
+    - name: zmk-module-devtool
+      remote: cormoran
+      revision: 9938a2c73c06d6e65ba2c0b68c9aa044a467eafc
+      import: true
+    - name: prospector-zmk-module
+      remote: kbladewht
+      revision: 37146e417cd95ec95ab144ed9ebb6632da06bd8e
+  self:
+    path: zmk-prospector

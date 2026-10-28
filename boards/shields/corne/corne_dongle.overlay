@@ -1,0 +1,122 @@
+/*
+ * Copyright (c) 2020 Pete Johanson
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+#include "corne.dtsi"
+// #include <dt-bindings/zmk/hid_indicators.h>
+&kscan0 {
+    diode-direction = "row2col";
+    row-gpios = <&gpio0 17 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+    col-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+};
+/ {
+    lfclk: lfclk {
+        compatible = "fixed-clock";
+        clock-frequency = <32768>;
+        #clock-cells = <0>;
+        status = "okay";
+    };
+};
+
+
+&reg1 {
+    regulator-initial-mode = <NRF5X_REG_MODE_LDO>;
+};
+
+
+// #include <dt-bindings/led/led.h>
+
+// &pinctrl {
+//     spi2_default: spi2_default {
+//         group1 {
+//             psels = <
+//                 NRF_PSEL(SPIM_SCK, 0, 6)
+//                 NRF_PSEL(SPIM_MOSI, 0, 5)
+//             >;
+
+//         };
+//     };
+
+//     spi2_sleep: spi2_sleep {
+//         group1 {
+//              psels = <
+//                 NRF_PSEL(SPIM_SCK, 0, 6)
+//                 NRF_PSEL(SPIM_MOSI, 0, 5)
+//             >;
+//             low-power-enable;
+//         };
+//     };
+// };
+
+// &spi2 {
+//     compatible = "nordic,nrf-spim";
+//     status = "okay";
+
+//     pinctrl-0 = <&spi2_default>;
+//     pinctrl-1 = <&spi2_sleep>;
+//     pinctrl-names = "default", "sleep";
+
+//     led_strip: ws2812@0 {
+//         compatible = "worldsemi,ws2812-spi";
+
+//                reg = <0>; /* ignored, but necessary for SPI bindings */
+//         spi-max-frequency = <4000000>;
+
+//         /* WS2812 */
+//         chain-length = <23>; /* number of LEDs */
+//         spi-one-frame = <0x70>;
+//         spi-zero-frame = <0x40>;
+//         color-mapping = <LED_COLOR_ID_GREEN
+//                          LED_COLOR_ID_RED
+//                          LED_COLOR_ID_BLUE>;
+//     };
+// };
+
+// / {
+//     ex2: ext_power {
+//         compatible = "zmk,ext-power-generic";
+//         control-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+//         init-delay-ms = <50>;
+//     };
+// };
+    // Node name must match original "EXT_POWER" label to preserve user settings.
+
+
+
+// /
+// {
+//     chosen {
+//         // zmk,ext-power = &ex2;
+//         zmk,underglow = &led_strip;
+//     };
+
+//     EXT_POWER {
+//         compatible = "zmk,ext-power-generic";
+//         control-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+//         init-delay-ms = <50>;
+//     };
+// };
+
+// / {
+//     leds {
+//         compatible = "gpio-leds";
+
+//         led0: led_0 {
+//             gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+//         };
+//         led1: led_1 {
+//             gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+//         };
+//         led2: led_2 {
+//             gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+//         };
+//     };
+
+//     aliases {
+//         led0 = &led0;
+//         led1 = &led1;
+//         led2 = &led2;
+//     };
+// };

@@ -1,0 +1,13 @@
+config ZMK_PROSPECTOR_SCANNER_ORIGINAL
+    bool "Scanner FIELD / OPERATOR / RADII on the ms2 dongle"
+    depends on $(shields_list_contains,prospector_ms2) && ZMK_DISPLAY
+    help
+      Restore the original scanner renderers on kblade ms2 using its existing
+      local-state bridge. This does not turn the USB dongle into a BLE scanner.
+
+config ZMK_PROSPECTOR_DYA_SETTINGS
+    bool "DYA theme, palette and brightness settings"
+    depends on ZMK_PROSPECTOR_SCANNER_ORIGINAL && ZMK_CUSTOM_SETTINGS && ZMK_STUDIO_RPC
+    help
+      Expose dongle_display_settings in DYA and apply changes from the LVGL
+      thread. Requires the same main+dya core as the Prospector dongle project.

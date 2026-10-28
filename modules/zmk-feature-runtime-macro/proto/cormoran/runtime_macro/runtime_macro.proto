@@ -1,0 +1,181 @@
+syntax = "proto3";
+
+package cormoran.runtime_macro;
+
+// A macro's whole lifecycle lives on this subsystem: CreateMacro/DeleteMacro/
+// RenameMacro address a macro by its NAME, and the step-level editing RPCs
+// address it by its SLOT number. A client never needs to know how macros are
+// stored (they happen to be zmk-feature-custom-settings keyspace entries under
+// the "macro/" prefix) - this keeps the storage an implementation detail and
+// avoids the client having to drive the generic custom-settings RPC directly.
+//
+// The operational RPCs (get/set-step-count/set-step/append-step) address a
+// macro by its `slot` number - the same numeric index the keymap behavior
+// binding uses to play it. A macro's slot is only known for certain by reading
+// its `slot` field from ListMacrosResponse or MacroDetail (e.g. right after
+// creating it with CreateMacro, then finding it by name in ListMacros).
+
+message ListMacrosRequest {}
+
+message GetMacroRequest { uint32 slot = 1; }
+
+message GetMacroGlobalSettingsRequest {}
+
+message MacroSummary {
+    uint32 slot = 1;
+    string name = 2;
+    uint32 encoded_size = 3;
+    // True when the macro has an in-memory-only change not yet written to
+    // flash (a memory-mode create/edit, or a value that differs from the
+    // persisted one). Cleared by SaveMacros / DiscardMacros. A devicetree
+    // default that has never been saved also reports true, since it lives
+    // only in memory until the user saves it.
+    bool has_unsaved_changes = 4;
+}
+
+message BehaviorBinding {
+    uint32 behavior_id = 1;
+    uint32 param1 = 2;
+    uint32 param2 = 3;
+}
+
+message DelayStep { uint32 delay_ms = 1; }
+
+message KeyTapSequenceStep { bytes packed_keys = 1; }
+
+message MacroStep {
+    oneof step {
+        BehaviorBinding down = 1;
+        BehaviorBinding up = 2;
+        BehaviorBinding tap = 3;
+        DelayStep delay = 4;
+        KeyTapSequenceStep key_tap_sequence = 5;
+    }
+}
+
+message MacroDetail {
+    uint32 slot = 1;
+    string name = 2;
+    repeated MacroStep steps = 3;
+    uint32 encoded_size = 4;
+}
+
+message SetMacroStepCountRequest {
+    uint32 slot = 1;
+    uint32 step_count = 2;
+    bool persist = 3;
+}
+
+message SetMacroStepRequest {
+    uint32 slot = 1;
+    uint32 step_index = 2;
+    MacroStep step = 3;
+    bool persist = 4;
+}
+
+message AppendMacroStepRequest {
+    uint32 slot = 1;
+    MacroStep step = 2;
+    bool persist = 3;
+}
+
+// Create a new, empty macro named `name`. The new macro claims whatever
+// keyspace slot is currently free; read it back from ListMacros to learn its
+// slot, then add steps with AppendMacroStep. `persist` writes the new entry
+// straight to flash (otherwise it lives in memory until SaveMacros).
+message CreateMacroRequest {
+    string name = 1;
+    bool persist = 2;
+}
+
+// Delete the macro named `name`, freeing its slot and erasing any persisted
+// record.
+message DeleteMacroRequest { string name = 1; }
+
+// Rename `old_name` to `new_name`, keeping the body. The old entry is left
+// untouched if the rename cannot complete, so a rename never loses data. The
+// macro's slot is NOT guaranteed to be preserved (the renamed entry claims
+// whatever slot is free).
+message RenameMacroRequest {
+    string old_name = 1;
+    string new_name = 2;
+    bool persist = 3;
+}
+
+// Reset the macro at `slot` to its compile-time (devicetree) state: if a
+// `cormoran,runtime-macro-default` node declares a macro whose name matches
+// this macro's, overwrite the body with that default; otherwise (no such
+// compile-time default) delete the macro entirely - "reset" of a macro that
+// only ever existed at runtime means removing it. `persist` writes the reset
+// result straight to flash (otherwise it lives in memory until SaveMacros /
+// is re-seeded from the devicetree next boot).
+message ResetMacroRequest {
+    uint32 slot = 1;
+    bool persist = 2;
+}
+
+message SetTapMsRequest {
+    uint32 tap_ms = 1;
+    bool persist = 2;
+}
+
+message SaveMacrosRequest {}
+
+message DiscardMacrosRequest {}
+
+message Request {
+    reserved 3, 8; // formerly set_macro_name, delete_macro (early designs) -
+                   // superseded by rename_macro/delete_macro below
+    oneof request_type {
+        ListMacrosRequest list_macros = 1;
+        GetMacroRequest get_macro = 2;
+        SetMacroStepCountRequest set_macro_step_count = 4;
+        GetMacroGlobalSettingsRequest get_macro_global_settings = 5;
+        SetTapMsRequest set_tap_ms = 6;
+        SetMacroStepRequest set_macro_step = 7;
+        SaveMacrosRequest save_macros = 9;
+        DiscardMacrosRequest discard_macros = 10;
+        AppendMacroStepRequest append_macro_step = 11;
+        CreateMacroRequest create_macro = 12;
+        DeleteMacroRequest delete_macro = 13;
+        RenameMacroRequest rename_macro = 14;
+        ResetMacroRequest reset_macro = 15;
+    }
+}
+
+message ErrorResponse { string message = 1; }
+
+message StatusResponse {
+    uint32 affected_count = 1;
+    string message = 2;
+}
+
+message ListMacrosResponse {
+    repeated MacroSummary macros = 1;
+    uint32 max_macro_bytes = 2;
+    uint32 max_name_length = 3;
+}
+
+message GetMacroResponse { MacroDetail macro = 1; }
+
+message MacroGlobalSettings {
+    uint32 tap_ms = 1;
+    uint32 max_entries = 2;
+    uint32 key_press_behavior_id = 3;
+    // Shared macro name+body pool budget (CONFIG_ZMK_RUNTIME_MACRO_POOL_BYTES)
+    // and the bytes currently occupied by every macro combined.
+    uint32 pool_bytes_total = 4;
+    uint32 pool_bytes_used = 5;
+}
+
+message GetMacroGlobalSettingsResponse { MacroGlobalSettings settings = 1; }
+
+message Response {
+    oneof response_type {
+        ErrorResponse error = 1;
+        StatusResponse status = 2;
+        ListMacrosResponse list_macros = 3;
+        GetMacroResponse get_macro = 4;
+        GetMacroGlobalSettingsResponse get_macro_global_settings = 5;
+    }
+}

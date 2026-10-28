@@ -1,0 +1,8 @@
+# Copyright (c) 2026 cormoran
+# SPDX-License-Identifier: MIT
+
+description: Runtime macro behavior
+
+compatible: "cormoran,zmk-behavior-runtime-macro"
+
+include: one_param.yaml

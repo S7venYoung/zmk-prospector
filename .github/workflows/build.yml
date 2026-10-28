@@ -1,0 +1,26 @@
+name: Build ms2 DYA dongle (manual only)
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: zmkfirmware/zmk-build-arm:stable
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: zmk-prospector
+      - name: Initialize pinned DYA workspace
+        run: |
+          west init -l zmk-prospector
+          west update
+          west zephyr-export
+      - name: Build kblade ms2 with DYA and four runtime themes
+        run: bash zmk-prospector/scripts/build-ms2-dya.sh "$GITHUB_WORKSPACE"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: corne_ms2_dya_four_themes
+          path: |
+            build-ms2-dya/zephyr/zmk.uf2
+            build-ms2-dya/zephyr/zmk.elf
+            build-ms2-dya/zephyr/.config
+          if-no-files-found: error

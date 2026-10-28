@@ -3,3 +3,11 @@ add_subdirectory(themes/walle)
 add_subdirectory(themes/codex-status)
 add_subdirectory(themes/weather-clock)
 add_subdirectory(themes/retro-workstation)
+
+add_subdirectory(themes/scanner-original)
+
+if(CONFIG_ZMK_KEY_STATS)
+  target_include_directories(app PRIVATE include)
+  target_sources(app PRIVATE src/key_stats.c)
+endif()
+add_subdirectory(modules/zmk-feature-runtime-macro)
