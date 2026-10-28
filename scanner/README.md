@@ -47,9 +47,9 @@ MONO 的曲线在切换发送器、广播超时和离开主题时清空；初始
 
 ## 构建入口
 
-依赖与原九主题 Dongle 相同，固定硬件模块提交
+硬件模块已放入本仓库 `hardware/prospector-zmk-module/`，来源提交为
 `kbladewht/prospector-zmk-module@37146e417cd95ec95ab144ed9ebb6632da06bd8e`。
-接收核心随本目录提供，不依赖已经被该硬件模块移除的旧接收源码。
+west 不再远程引用该硬件项目。接收核心随本目录提供，不依赖已经被该硬件模块移除的旧接收源码。
 
 ```sh
 # 初始化本分支 west.yml 后，在 west workspace 中：

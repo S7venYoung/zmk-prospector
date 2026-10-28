@@ -1,0 +1,14 @@
+# Copyright (c) 2024 The ZMK Contributors
+# SPDX-License-Identifier: MIT
+
+# MINIMAL BOOT TEST: Match display_test exactly (Trial 20)
+# display_test Kconfig.shield has ONLY this line
+config SHIELD_PROSPECTOR_SCANNER
+    def_bool $(shields_list_contains,prospector_scanner)
+
+# ALL OTHER SETTINGS MOVED TO Kconfig.defconfig OR DISABLED
+# Previous settings that caused boot issues:
+# - ZMK_BATTERY default y (requires driver initialization)
+# - BT_OBSERVER default y
+# - ZMK_BLE/USB defaults
+# - LVGL default y

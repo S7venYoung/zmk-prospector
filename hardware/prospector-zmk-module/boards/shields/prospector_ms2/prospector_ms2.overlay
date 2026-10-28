@@ -1,0 +1,189 @@
+/*
+ * Display Test - ST7789V
+ * Pin mapping from Prospector Scanner
+ */
+
+#include <dt-bindings/zmk/matrix_transform.h>
+
+/ {
+    chosen {
+        // zmk,kscan = &kscan0;
+        zmk,display = &st7789v;
+        zephyr,display = &st7789v;
+        // zephyr,console = &cdc_acm_uart;
+    };
+
+
+
+    /* PWM backlight control for brightness adjustment - Pin 6 = P1.11 */
+    /* PWM period: 1000us = 1kHz for flicker-free operation */
+    pwmleds {
+        compatible = "pwm-leds";
+        backlight: backlight {
+            pwms = <&pwm0 0 PWM_USEC(1000) PWM_POLARITY_NORMAL>;
+            label = "Backlight";
+        };
+    };
+
+    /* Alias for backlight */
+    // aliases {
+    //     led0 = &backlight;
+    // };
+};
+
+/* Disable default SPI2 */
+&spi2 {
+    status = "disabled";
+};
+
+/* PWM pinctrl for backlight on P1.11 */
+&pinctrl {
+    pwm0_default: pwm0_default {
+        group1 {
+            psels = <NRF_PSEL(PWM_OUT0, 0, 9)>;  /* P1.11 = Pin 6 = Backlight D6*/
+        };
+    };
+
+    pwm0_sleep: pwm0_sleep {
+        group1 {
+            psels = <NRF_PSEL(PWM_OUT0, 0, 9)>;//D6
+            low-power-enable;
+        };
+    };
+};
+
+/* Enable PWM0 for backlight */
+&pwm0 {
+    status = "okay";
+    pinctrl-0 = <&pwm0_default>;
+    pinctrl-1 = <&pwm0_sleep>;
+    pinctrl-names = "default", "sleep";
+};
+
+/* Custom pinctrl for SPI3 */
+&pinctrl {
+    spi3_default: spi3_default {
+        group1 {
+            psels = <NRF_PSEL(SPIM_SCK, 0, 22)>,//D8
+                <NRF_PSEL(SPIM_MOSI, 0, 20)>,//D10
+                <NRF_PSEL(SPIM_MISO, 1, 10)>;
+        };
+    };
+
+    spi3_sleep: spi3_sleep {
+        group1 {
+            psels = <NRF_PSEL(SPIM_SCK, 0, 22)>,
+                <NRF_PSEL(SPIM_MOSI, 0, 20)>,
+                <NRF_PSEL(SPIM_MISO, 1, 10)>;
+            low-power-enable;
+        };
+    };
+};
+
+/* SPI3 for display */
+&spi3 {
+    status = "okay";
+    pinctrl-0 = <&spi3_default>;
+    pinctrl-1 = <&spi3_sleep>;
+    pinctrl-names = "default", "sleep";
+    cs-gpios = <&kblade_ms2 9 GPIO_ACTIVE_LOW>;//P1.00
+};
+
+/* MIPI DBI wrapper for ST7789V */
+/ {
+    mipi_dbi {
+        compatible = "zephyr,mipi-dbi-spi";
+        spi-dev = <&spi3>;
+        dc-gpios = <&kblade_ms2 7 GPIO_ACTIVE_HIGH>;//P02
+        reset-gpios = <&kblade_ms2 3 GPIO_ACTIVE_LOW>;//p10
+        write-only;
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        st7789v: st7789v@0 {
+            compatible = "sitronix,st7789v";
+            reg = <0>;
+            /* nRF52840 的 SPIM3 最高 32MHz，ST7789V 本身支持到 62.5MHz。
+             * 20MHz 下一帧全屏 280x240x2B=134KB 要 ~54ms，日志页滚动会明显发顿；
+             * 提到 32MHz 后同样一帧 ~34ms（约 29fps），滚动顺很多。 */
+            mipi-max-frequency = <32000000>;
+            mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+            /* 大屏 240x320 切换：构建时加 -DDTS_EXTRA_CPPFLAGS=-DBIG_LCD
+             * （见 corne_l_ms.sh）。定义了就横屏用满 320 像素宽；不定义就是
+             * 小屏 240x280（旋转后 280x240，需要 x-offset=20 把画面居中）。 */
+#ifdef BIG_LCD
+            width = <320>;
+            x-offset = <0>;
+#else
+            width = <280>;
+            x-offset = <20>;
+#endif
+            height = <240>;
+            y-offset = <0>;
+            /* Zephyr 4.1: inversion is ON by default, use inversion-off to disable */
+            vcom = <0x19>;
+            gctrl = <0x35>;
+            vrhs = <0x12>;
+            vdvs = <0x20>;
+            mdac = <0x60>;  /* 90 degree rotation */
+            gamma = <0x01>;
+            colmod = <0x05>;
+            lcm = <0x2c>;
+            porch-param = [0c 0c 00 33 33];
+            cmd2en-param = [5a 69 02 01];
+            pwctrl1-param = [a4 a1];
+            pvgam-param = [D0 04 0D 11 13 2B 3F 54 4C 18 0D 0B 1F 23];
+            nvgam-param = [D0 04 0C 11 13 2C 3F 44 51 2F 1F 1F 20 23];
+            ram-param = [00 F0];
+            rgb-param = [CD 08 14];
+        };
+    };
+};
+
+/* ========== I2C Bus ========== */
+
+/*
+ * I2C0 configuration for touch sensor (CST816S) and light sensor (APDS9960).
+ * This MUST be in the shield overlay (not board-level boards/*.overlay)
+ * because I2C0 shares hardware peripheral 0x40003000 with SPI0 on nRF52840.
+ * Keyboards using SPI0 (e.g. PAW3222 trackball) would conflict if I2C0
+ * were enabled at the board level for all builds.
+ */
+&pinctrl {
+    i2c0_default: i2c0_default {
+        group1 {
+            psels = <NRF_PSEL(TWIM_SDA, 0, 4)>,  /* D4 = P0.04 = SDA */
+                    <NRF_PSEL(TWIM_SCL, 0, 5)>;  /* D5 = P0.05 = SCL */
+        };
+    };
+
+    i2c0_sleep: i2c0_sleep {
+        group1 {
+            psels = <NRF_PSEL(TWIM_SDA, 0, 4)>,
+                    <NRF_PSEL(TWIM_SCL, 0, 5)>;
+            low-power-enable;
+        };
+    };
+};
+
+&i2c0 {
+    status = "disabled";
+    compatible = "nordic,nrf-twim";
+    pinctrl-0 = <&i2c0_default>;
+    pinctrl-1 = <&i2c0_sleep>;
+    pinctrl-names = "default", "sleep";
+    clock-frequency = <100000>;  /* Standard mode 100kHz */
+
+    /* CST816S 触摸控制器节点已删除：触摸功能（原 CONFIG_PROSPECTOR_TOUCH_ENABLED）
+     * 整体移除后，已没有任何驱动会实例化它，D0/D1 上的 TP_IRQ/TP_RST 也不再需要。 */
+
+    /* APDS9960 Light/Gesture Sensor (Step 5c - for auto-brightness) */
+    /* NOTE: INT not physically connected, using unused internal GPIO P0.09 */
+    /* P0.09 is NFC1 pin, not exposed on XIAO but available as GPIO */
+    apds9960: apds9960@39 {
+        compatible = "avago,apds9960";
+        reg = <0x39>;
+        status = "disabled";
+        int-gpios = <&gpio1 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+    };
+};

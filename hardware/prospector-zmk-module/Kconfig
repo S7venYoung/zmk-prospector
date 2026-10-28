@@ -1,0 +1,711 @@
+config PROSPECTOR_LAYER_ROLLER_ALL_CAPS
+    bool "Convert layer names to all caps"
+    default n
+
+config PROSPECTOR_ROTATE_DISPLAY_180
+    bool "Rotate the display 180 degrees"
+    default n
+
+# Old ALS configurations removed - moved to bottom of file with proper dependencies
+
+# New configuration options for Scanner Mode
+
+config ZMK_STATUS_ADVERTISEMENT
+    bool "Enable ZMK Status Advertisement"
+    default n
+    depends on ZMK_BLE
+    select HWINFO
+    help
+      Enable broadcasting of keyboard status information via BLE Advertisement.
+      This allows external devices to receive status updates without establishing
+      a connection to the keyboard.
+      Uses legacy advertising API - no BT_EXT_ADV needed.
+
+config ZMK_STATUS_ADV_INTERVAL_MS
+    int "Status advertisement interval in milliseconds"
+    range 100 10000
+    default 1000
+    depends on ZMK_STATUS_ADVERTISEMENT
+    help
+      Interval between status advertisement broadcasts in milliseconds.
+      Lower values provide more frequent updates but consume more battery.
+
+config PROSPECTOR_EXPECTED_PERIPHERAL_COUNT
+    int "Number of split peripherals expected for 'fully connected' state"
+    range 0 3
+    default 1 if ZMK_SPLIT_ROLE_CENTRAL
+    default 0
+    depends on ZMK_STATUS_ADVERTISEMENT
+    help
+      How many split peripherals must be connected before prospector treats
+      the keyboard as fully connected. While fewer than this many peripherals
+      are connected, prospector switches to a burst/silent cycle (see
+      PROSPECTOR_SPLIT_PARTIAL_BURST_MS / _SILENT_MS) so the central's
+      scan/connect can run without contention from prospector adv.
+
+      Defaults:
+        ZMK_SPLIT_ROLE_CENTRAL=y -> 1 (typical split keyboard, central+1)
+        otherwise                -> 0 (no peripherals expected; cycle never
+                                       engages, prospector behaves as in
+                                       prior versions)
+
+      Override in keyboard config for multi-peripheral builds (e.g. a split
+      keyboard with right half + trackball = 2). Range 0-3.
+
+config PROSPECTOR_SPLIT_PARTIAL_BURST_MS
+    int "Burst window during split partial state (ms)"
+    range 100 10000
+    default 200
+    depends on ZMK_STATUS_ADVERTISEMENT && ZMK_SPLIT_ROLE_CENTRAL
+    help
+      While the split central is still bringing up peripherals (count <
+      PROSPECTOR_EXPECTED_PERIPHERAL_COUNT), prospector cycles between a
+      short BURST window (this duration, fast 100-150ms adv interval) and
+      a longer SILENT window (PROSPECTOR_SPLIT_PARTIAL_SILENT_MS, adv set
+      released entirely). This prioritises peripheral discovery over
+      scanner visibility.
+
+      Default 200ms: long enough to fit 1-2 fast adv events given the
+      BLE-spec ADV_NONCONN_IND minimum interval of 100ms plus advDelay
+      0-10ms. Going below ~150ms risks zero adv events per burst.
+
+config PROSPECTOR_SPLIT_PARTIAL_SILENT_MS
+    int "Silent window during split partial state (ms)"
+    range 300 60000
+    default 1800
+    depends on ZMK_STATUS_ADVERTISEMENT && ZMK_SPLIT_ROLE_CENTRAL
+    help
+      Duration of the silent window in the burst/silent cycle (see
+      PROSPECTOR_SPLIT_PARTIAL_BURST_MS). During this window prospector
+      stops its own adv entirely so the controller's radio scheduler is
+      free to handle the central's scan and CONNECT_REQ tx without
+      collision.
+
+      Default 1800ms: with peripheral adv at ~100ms interval the central
+      has ~18 uncontested CONNECT_REQ opportunities, with comfortable
+      headroom for LL connection setup (50-100ms).
+
+      With BURST=200 and SILENT=1800, prospector adv is on 10% of the
+      time during split startup -- "see it if you're lucky" UX in trade
+      for rock-solid peripheral connect.
+
+config ZMK_STATUS_ADV_KEYBOARD_NAME
+    string "Keyboard name for status advertisement"
+    default ""
+    depends on ZMK_STATUS_ADVERTISEMENT
+    help
+      Name to identify this keyboard in status advertisements.
+      If set, also overrides the BLE device name (CONFIG_BT_DEVICE_NAME)
+      so that scanners and PCs display this name.
+      If empty, the BLE device name is used as-is.
+
+config PROSPECTOR_CHANNEL
+    int "Prospector channel number (0-255)"
+    range 0 255
+    default 0
+    depends on ZMK_STATUS_ADVERTISEMENT
+    help
+      Channel number for Prospector scanner pairing.
+      0 = Broadcast to all scanners (default, maximum compatibility)
+      1-255 = Specific channel for dedicated scanner pairing
+
+      Use this to prevent interference when multiple keyboards and
+      scanners are in the same area. Set the same channel number on
+      both keyboard and scanner to create a dedicated pair.
+
+config ZMK_STATUS_ADV_ACTIVITY_BASED
+    bool "Enable activity-based advertisement intervals"
+    default y
+    depends on ZMK_STATUS_ADVERTISEMENT
+    help
+      Enable dynamic advertisement intervals based on keyboard activity.
+      High frequency during key presses, low frequency during idle periods.
+
+config ZMK_STATUS_ADV_ACTIVE_INTERVAL_MS
+    int "Active advertisement interval in milliseconds"
+    range 100 1000
+    default 200
+    depends on ZMK_STATUS_ADV_ACTIVITY_BASED
+    help
+      Advertisement interval when keyboard is active (keys being pressed).
+      200ms = 5Hz for responsive status updates.
+
+config ZMK_STATUS_ADV_IDLE_INTERVAL_MS
+    int "Idle advertisement interval in milliseconds"
+    range 500 300000
+    default 30000
+    depends on ZMK_STATUS_ADV_ACTIVITY_BASED
+    help
+      Advertisement interval when keyboard is idle.
+      30000ms (30 seconds) default for significant battery conservation.
+      Can be set up to 300000ms (5 minutes) for maximum battery saving.
+      Scanner timeout should be set longer than this value.
+
+config ZMK_STATUS_ADV_ACTIVITY_TIMEOUT_MS
+    int "Activity timeout in milliseconds"
+    range 1000 300000
+    default 5000
+    depends on ZMK_STATUS_ADV_ACTIVITY_BASED
+    help
+      Time to wait before switching from active to idle mode.
+      Can be set up to 300000ms (5 minutes) for extended active periods.
+      5000ms = 5 seconds default prevents frequent mode switching during brief pauses.
+
+config ZMK_STATUS_ADV_CENTRAL_SIDE
+    string "Physical side of central device in split keyboard"
+    default "RIGHT"
+    depends on ZMK_STATUS_ADVERTISEMENT && ZMK_SPLIT
+    help
+      Specify which physical side the central device is on.
+      RIGHT: Central is on the right side (default - most split keyboards)
+      LEFT: Central is on the left side (e.g. some keyboards like Sweep)
+      AUX: Central is neither keyboard half (e.g. a trackball or other
+      auxiliary unit acting as split central). Both halves are then
+      peripherals: LEFT_PERIPHERAL fills the left battery slot,
+      RIGHT_PERIPHERAL fills the right battery slot, and the central's
+      own battery is shown in the Aux1 slot.
+      This determines the battery display position in scanner devices.
+
+      IMPORTANT for AUX: an AUX central has at least 2 split peripherals
+      (both halves), but PROSPECTOR_EXPECTED_PERIPHERAL_COUNT defaults
+      to 1. Set it to your actual peripheral count (e.g. 2), otherwise
+      the burst/silent startup protection disengages after the first
+      half connects and the second half may connect slowly.
+      Also keep LEFT_PERIPHERAL, RIGHT_PERIPHERAL and AUX2_PERIPHERAL
+      set to three distinct indices - overlapping values display the
+      same peripheral twice and hide another.
+
+config ZMK_STATUS_ADV_LEFT_PERIPHERAL
+    int "Peripheral index for LEFT half (CENTRAL_SIDE=AUX only)"
+    default 0
+    range 0 2
+    depends on ZMK_STATUS_ADVERTISEMENT && ZMK_SPLIT
+    help
+      When CENTRAL_SIDE is "AUX", which peripheral index is the LEFT
+      keyboard half. Default is 0 (first connected peripheral).
+      Adjust if the peripheral connection order doesn't match the
+      physical layout.
+
+config ZMK_STATUS_ADV_RIGHT_PERIPHERAL
+    int "Peripheral index for RIGHT half (CENTRAL_SIDE=AUX only)"
+    default 1
+    range 0 2
+    depends on ZMK_STATUS_ADVERTISEMENT && ZMK_SPLIT
+    help
+      When CENTRAL_SIDE is "AUX", which peripheral index is the RIGHT
+      keyboard half. Default is 1 (second connected peripheral).
+
+config ZMK_STATUS_ADV_HALF_PERIPHERAL
+    int "Peripheral index for the other keyboard half"
+    default 0
+    range 0 2
+    depends on ZMK_STATUS_ADVERTISEMENT && ZMK_SPLIT
+    help
+      Which peripheral index to display in the keyboard half slot
+      (opposite side of central). Default is 0 (first connected peripheral).
+
+      Use this when the peripheral connection order doesn't match the
+      physical keyboard layout (e.g., after settings_reset, trackball
+      connected before the keyboard half).
+
+config ZMK_STATUS_ADV_AUX1_PERIPHERAL
+    int "Peripheral index for Aux1 slot"
+    default 1
+    range 0 2
+    depends on ZMK_STATUS_ADVERTISEMENT && ZMK_SPLIT
+    help
+      Which peripheral index to display in the Aux1 slot.
+      Typically used for trackball or additional peripheral device.
+      Default is 1 (second connected peripheral).
+
+config ZMK_STATUS_ADV_AUX2_PERIPHERAL
+    int "Peripheral index for Aux2 slot"
+    default 2
+    range 0 2
+    depends on ZMK_STATUS_ADVERTISEMENT && ZMK_SPLIT
+    help
+      Which peripheral index to display in the Aux2 slot.
+      Default is 2 (third connected peripheral).
+
+config PROSPECTOR_MODE_SCANNER
+    bool "Enable Prospector Scanner Mode"
+    default n
+    depends on BT_OBSERVER
+    help
+      Enable scanner mode to receive status advertisements from ZMK keyboards.
+      In this mode, Prospector acts as a standalone status display device.
+
+# NOTE: CONFIG_PROSPECTOR_TOUCH_ENABLED (CST816S 触摸屏 / 滑动切页 / 设置页) 已经
+# 整体移除，不再存在这个选项。屏幕只做状态显示，没有用户交互。
+
+config PROSPECTOR_DEFAULT_LAYOUT
+    int "Default display layout"
+    default 4
+    range 0 4
+    # depends on PROSPECTOR_MODE_SCANNER
+    help
+      Select the default display layout at startup.
+      The layout is fixed for the session - touch input (and with it the in-device
+      layout switcher) has been removed.
+
+      0 = YADS (original status display)
+      1 = Field (animated line segments driven by WPM)
+      2 = Operator (minimalist with dot indicators)
+      3 = Radii (circular wheel indicator)
+      4 = YADS2 (YADS-style screen: left/right BLE indicators in the top
+          corners, keyboard name, layer roller with the current keymap layer
+          highlighted, NerdFont modifiers and battery level per half along the
+          bottom; the upstream USB/output widget is not used on a dongle)
+
+config PROSPECTOR_MULTI_KEYBOARD
+    bool "Support multiple keyboards"
+    default y
+    # depends on PROSPECTOR_MODE_SCANNER
+    help
+      Support receiving status from multiple keyboards simultaneously.
+
+config PROSPECTOR_MAX_KEYBOARDS
+    int "Maximum number of keyboards to track"
+    range 1 5
+    default 3
+    # depends on PROSPECTOR_MULTI_KEYBOARD
+    help
+      Maximum number of keyboards that can be tracked simultaneously.
+
+config PROSPECTOR_MAX_LAYERS
+    int "Maximum number of layers to display"
+    range 4 10
+    default 7
+    depends on PROSPECTOR_MODE_SCANNER
+    help
+      Maximum number of layers to display in the layer status widget (layers 0 to N-1).
+      Default is 7 layers (0-6). For 10-layer support set to 10 (0-9).
+      Range is 4-10 layers. Display shows layers 0 through (MAX_LAYERS-1).
+      Automatically centers when fewer layers are configured.
+      This setting only applies to scanner mode and is ignored for keyboard builds.
+
+config PROSPECTOR_LAYER_SLIDE_DEFAULT
+    bool "Enable layer slide display mode by default"
+    default n
+    depends on PROSPECTOR_MODE_SCANNER
+    help
+      Enable slide animation mode for layer display by default.
+      In slide mode, the active layer slides to the center position with animation.
+      When disabled, layers are displayed as a static list.
+      This can be toggled at runtime via the Display Settings screen (if touch enabled).
+      Works in both touch and non-touch modes.
+
+config PROSPECTOR_SCANNER_TIMEOUT_MS
+    int "Scanner timeout in milliseconds (0 to disable)"
+    range 0 600000
+    default 480000
+    depends on PROSPECTOR_MODE_SCANNER
+    help
+      Time in milliseconds to wait before considering a keyboard as lost.
+      Default is 480000ms (8 minutes) - should be longer than keyboard idle interval.
+      Set to 0 to disable timeout completely.
+      Range is 0 (disabled) or 10000-600000ms (10s to 10min).
+
+config PROSPECTOR_SCANNER_MAIN_LOOP_INTERVAL_MS
+    int "Main loop timer interval in milliseconds"
+    range 50 500
+    default 150
+    depends on PROSPECTOR_MODE_SCANNER
+    help
+      Main loop timer interval for UI updates and message processing.
+      Lower values provide more responsive UI but use more CPU power.
+      Higher values save battery but may feel less responsive.
+
+      Recommended values:
+      - 100ms: Very responsive (high CPU usage)
+      - 150ms: Balanced responsiveness and efficiency (default)
+      - 200ms: Power-saving mode (may feel slightly laggy)
+
+      Range is 50-500ms. Default is 150ms for balanced performance.
+
+config PROSPECTOR_SCANNER_TIMEOUT_BRIGHTNESS
+    int "Display brightness during timeout (percentage)"
+    range 1 50
+    default 1
+    depends on PROSPECTOR_MODE_SCANNER
+    help
+      Display brightness percentage when scanner times out (no keyboard reception).
+      Low brightness saves power while maintaining minimal visibility.
+      Brightness automatically restores when keyboard data is received again.
+      Default is 1% (very dim). Range is 1-50%.
+
+config PROSPECTOR_SCANNER_CHANNEL
+    int "Prospector scanner channel number (0-255)"
+    range 0 255
+    default 0
+    depends on PROSPECTOR_MODE_SCANNER
+    help
+      Channel number for receiving keyboard advertisements.
+      0 = Receive from all keyboards (default, maximum compatibility)
+      1-255 = Receive only from keyboards on the same channel
+
+      Use this to prevent interference when multiple keyboards and
+      scanners are in the same area. Set the same channel number on
+      both keyboard and scanner to create a dedicated pair.
+
+      Backward compatibility: Old keyboards (channel=0) will always
+      be received by scanners regardless of scanner channel setting.
+
+config PROSPECTOR_SCANNER_IDLE_BRIGHTNESS_MS
+    int "Time before dimming display when no keyboard activity"
+    range 60000 600000
+    default 120000
+    depends on PROSPECTOR_MODE_SCANNER && PROSPECTOR_BATTERY_SUPPORT
+    help
+      Time in milliseconds before dimming display when keyboard is idle.
+      Scanner will reduce brightness when no activity is detected.
+      Default is 120000ms (2 minutes). Range is 1-10 minutes.
+      Only applies when battery support is enabled.
+
+config PROSPECTOR_SCANNER_IDLE_BRIGHTNESS_PERCENT
+    int "Display brightness during scanner idle mode"
+    range 5 50
+    default 20
+    depends on PROSPECTOR_MODE_SCANNER && PROSPECTOR_BATTERY_SUPPORT
+    help
+      Brightness percentage when scanner detects prolonged keyboard idle.
+      Low brightness saves battery while maintaining visibility.
+      Default is 20%. Range is 5-50%.
+
+config PROSPECTOR_ADVERTISEMENT_FREQUENCY_DIM
+    bool "Enable brightness dimming based on advertisement frequency"
+    default y
+    depends on PROSPECTOR_MODE_SCANNER && PROSPECTOR_BATTERY_SUPPORT
+    help
+      Automatically dim display when keyboard advertisement frequency drops below 1Hz.
+      This provides immediate response to keyboard idle state changes.
+      Works independently of timeout-based dimming for better responsiveness.
+
+config PROSPECTOR_ADV_FREQUENCY_DIM_THRESHOLD_MS
+    int "Advertisement frequency threshold for dimming (milliseconds)"
+    range 1500 10000
+    default 2000
+    depends on PROSPECTOR_ADVERTISEMENT_FREQUENCY_DIM
+    help
+      Advertisement interval threshold above which display will dim.
+      Default is 2000ms (0.5Hz). When keyboard sends slower than this, display dims.
+      Should be longer than active interval but shorter than idle interval.
+
+config PROSPECTOR_ADV_FREQUENCY_DIM_BRIGHTNESS
+    int "Brightness percentage when advertisement frequency is low"
+    range 5 60
+    default 25
+    depends on PROSPECTOR_ADVERTISEMENT_FREQUENCY_DIM
+    help
+      Display brightness when keyboard advertisement frequency is low.
+      Default is 25% for battery conservation while maintaining readability.
+      Range is 5-60%.
+
+config PROSPECTOR_BRIGHTNESS_FADE_DURATION_MS
+    int "Brightness fade duration in milliseconds"
+    range 100 5000
+    default 1000
+    depends on PROSPECTOR_MODE_SCANNER
+    help
+      Duration for smooth brightness transitions in milliseconds.
+      Default is 1000ms (1 second). Range is 100ms to 5 seconds.
+      Shorter duration = faster fade, longer duration = smoother fade.
+
+config PROSPECTOR_BRIGHTNESS_FADE_STEPS
+    int "Number of brightness fade steps"
+    range 5 50
+    default 10
+    depends on PROSPECTOR_MODE_SCANNER
+    help
+      Number of intermediate steps for brightness fade transitions.
+      More steps = smoother fade but more CPU usage.
+      Default is 10 steps. Range is 5-50 steps.
+
+# Ambient Light Sensor Settings
+config PROSPECTOR_USE_AMBIENT_LIGHT_SENSOR
+    bool "Enable ambient light sensor for automatic brightness"
+    default n
+    depends on PROSPECTOR_MODE_SCANNER
+    help
+      Enable APDS9960 ambient light sensor for automatic brightness adjustment.
+      When enabled, uses direct I2C polling for sensor readings (no interrupt pin required).
+      When disabled, uses fixed brightness mode.
+
+      Note: This uses direct I2C communication, not the Zephyr APDS9960 driver.
+      This allows 4-pin connections without an interrupt pin.
+
+      Hardware connection (when enabled):
+      - SDA = D4 (P0.04)
+      - SCL = D5 (P0.05)
+      - VCC = 3.3V, GND = GND
+
+      User-friendly: Only this one setting needs to be changed!
+
+config PROSPECTOR_ALS_MIN_BRIGHTNESS
+    int "Minimum brightness percentage"
+    range 1 95
+    default 5
+    depends on PROSPECTOR_USE_AMBIENT_LIGHT_SENSOR
+    help
+      Minimum brightness level in percentage (1-95%).
+      Display will never go darker than this value.
+      Default is 5% for true darkness support.
+
+config PROSPECTOR_ALS_MAX_BRIGHTNESS
+    int "Maximum brightness percentage"
+    range 10 100
+    default 65 if PROSPECTOR_BATTERY_SUPPORT
+    default 80
+    depends on PROSPECTOR_USE_AMBIENT_LIGHT_SENSOR
+    help
+      Maximum brightness level in percentage (10-100%).
+      Display will never go brighter than this value.
+      Default is 65% when battery operation enabled (to preserve battery life),
+      80% when USB powered only for comfortable viewing without excessive brightness.
+      Note: For separate battery/USB max values, use the options below instead.
+
+config PROSPECTOR_ALS_MAX_BRIGHTNESS_BATTERY
+    int "Maximum brightness percentage when on battery power"
+    range 0 100
+    default 0
+    depends on PROSPECTOR_USE_AMBIENT_LIGHT_SENSOR && PROSPECTOR_BATTERY_SUPPORT
+    help
+      Maximum brightness when running on battery power (0=disabled, 10-100%).
+      Set to 0 to use PROSPECTOR_ALS_MAX_BRIGHTNESS setting instead.
+      When set to non-zero, overrides the general max brightness for battery operation.
+      Example: Set to 50 for min-50% range when on battery.
+
+config PROSPECTOR_ALS_MAX_BRIGHTNESS_USB
+    int "Maximum brightness percentage when on USB power"
+    range 0 100
+    default 0
+    depends on PROSPECTOR_USE_AMBIENT_LIGHT_SENSOR && PROSPECTOR_BATTERY_SUPPORT
+    help
+      Maximum brightness when running on USB power (0=disabled, 10-100%).
+      Set to 0 to use PROSPECTOR_ALS_MAX_BRIGHTNESS setting instead.
+      When set to non-zero, overrides the general max brightness for USB operation.
+      Example: Set to 90 for min-90% range when on USB power.
+
+config PROSPECTOR_ALS_UPDATE_INTERVAL_MS
+    int "Ambient light sensor update interval in milliseconds"
+    range 500 10000
+    default 2000
+    depends on PROSPECTOR_USE_AMBIENT_LIGHT_SENSOR
+    help
+      How often to read the ambient light sensor in milliseconds.
+      Lower values = more responsive but higher power consumption.
+      Default is 2000ms (2 seconds). Range is 0.5-10 seconds.
+
+config PROSPECTOR_ALS_SENSOR_THRESHOLD
+    int "Light sensor threshold for maximum brightness"
+    range 50 500
+    default 100
+    depends on PROSPECTOR_USE_AMBIENT_LIGHT_SENSOR
+    help
+      Light sensor value at which display reaches maximum brightness.
+      Lower values = more sensitive (reach 100% brightness sooner).
+      Higher values = less sensitive (need brighter light for 100%).
+      Default is 100. Try 150-200 if sensor seems too sensitive.
+
+config PROSPECTOR_FIXED_BRIGHTNESS
+    int "Fixed brightness percentage (when ALS disabled)"
+    range 10 100
+    default 65 if PROSPECTOR_BATTERY_SUPPORT
+    default 80
+    depends on PROSPECTOR_MODE_SCANNER
+    help
+      Fixed brightness level when ambient light sensor is disabled.
+      Also used as fallback brightness when ALS sensor fails.
+      Default is 65% when battery operation enabled (to preserve battery life),
+      80% when USB powered only for comfortable viewing.
+      Range is 10-100%.
+      Note: For separate battery/USB fixed values, use the options below instead.
+
+config PROSPECTOR_FIXED_BRIGHTNESS_BATTERY
+    int "Fixed brightness percentage when on battery power (ALS disabled)"
+    range 0 100
+    default 0
+    depends on PROSPECTOR_MODE_SCANNER && PROSPECTOR_BATTERY_SUPPORT
+    help
+      Fixed brightness when running on battery power and ALS is disabled (0=disabled, 10-100%).
+      Set to 0 to use PROSPECTOR_FIXED_BRIGHTNESS setting instead.
+      When set to non-zero, overrides the general fixed brightness for battery operation.
+      Example: Set to 40 for constant 40% when on battery and ALS disabled.
+
+config PROSPECTOR_FIXED_BRIGHTNESS_USB
+    int "Fixed brightness percentage when on USB power (ALS disabled)"
+    range 0 100
+    default 0
+    depends on PROSPECTOR_MODE_SCANNER && PROSPECTOR_BATTERY_SUPPORT
+    help
+      Fixed brightness when running on USB power and ALS is disabled (0=disabled, 10-100%).
+      Set to 0 to use PROSPECTOR_FIXED_BRIGHTNESS setting instead.
+      When set to non-zero, overrides the general fixed brightness for USB operation.
+      Example: Set to 85 for constant 85% when on USB and ALS disabled.
+
+# Scanner Battery Support Configuration
+config PROSPECTOR_BATTERY_SUPPORT
+    bool "Enable scanner battery operation support"
+    default n
+    depends on PROSPECTOR_MODE_SCANNER
+    select ZMK_BATTERY_REPORTING
+    help
+      Enable battery operation for Prospector scanner device.
+      Automatically detects battery presence via device tree.
+      Safe to enable even without battery hardware.
+      Automatically enables ZMK_BATTERY_REPORTING.
+      Note: the on-screen "scanner battery" widget was removed - the dongle has no
+      battery of its own, the screen only shows the left/right keyboard batteries.
+      Note: USB_DEVICE_STACK must be enabled manually in config file.
+
+# WPM (Words Per Minute) Configuration
+config ZMK_STATUS_ADV_WPM_WINDOW_SECONDS
+    int "WPM calculation window in seconds"
+    range 5 120
+    default 30
+    depends on ZMK_STATUS_ADVERTISEMENT
+    help
+      Time window for WPM (Words Per Minute) calculation in seconds.
+      Shorter windows (5-15s) provide more responsive updates to current typing speed.
+      Longer windows (30-60s) provide more stable, averaged WPM values.
+      Default is 30 seconds. The multiplier is automatically calculated as (60 / window).
+      Examples:
+      - 10 seconds: Very responsive, 6x multiplier
+      - 30 seconds: Balanced, 2x multiplier (default)
+      - 60 seconds: Traditional 1-minute WPM, 1x multiplier
+
+config ZMK_STATUS_ADV_WPM_DECAY_TIMEOUT_SECONDS
+    int "WPM decay timeout in seconds"
+    range 0 300
+    default 0
+    depends on ZMK_STATUS_ADVERTISEMENT
+    help
+      Time after which WPM completely resets due to inactivity.
+      Set to 0 to auto-calculate as 2x the window size (recommended).
+      Manual values: 10-300 seconds for custom timeout behavior.
+      Default 0 = auto (60s for 30s window, 20s for 10s window, etc.)
+
+      Examples:
+      - 0: Auto-calculate (recommended) - 2x window size
+      - 30: Manual 30-second timeout
+      - 120: Manual 2-minute timeout
+
+# Alias for common typo - prevents build errors in external configs
+config ZMK_STATUS_ADV_WMP_DECAY_TIMEOUT_SECONDS
+    int "WPM decay timeout (DEPRECATED - use ZMK_STATUS_ADV_WPM_DECAY_TIMEOUT_SECONDS)"
+    range 0 300
+    default 0
+    depends on ZMK_STATUS_ADVERTISEMENT
+    help
+      DEPRECATED: This is a typo alias for ZMK_STATUS_ADV_WPM_DECAY_TIMEOUT_SECONDS.
+      Please use ZMK_STATUS_ADV_WPM_DECAY_TIMEOUT_SECONDS instead.
+
+      This setting handles the common typo (WMP instead of WPM) found in external
+      keyboard configurations to prevent build errors.
+
+      This alias will be removed in future versions. Please update your configuration
+      to use the correct setting name: ZMK_STATUS_ADV_WPM_DECAY_TIMEOUT_SECONDS
+
+config PROSPECTOR_DEBUG_WIDGET
+    bool "Enable debug widget for diagnostics"
+    default n
+    depends on PROSPECTOR_MODE_SCANNER
+    help
+      Enable debug status widget for diagnostics and troubleshooting.
+      Shows sensor status, battery monitoring info, and system debug messages.
+      Positioned in modifier area when no modifier keys are active.
+      ENABLE for development and debugging, DISABLE for production use.
+
+config PROSPECTOR_DISPLAY_LOG_PAGE
+    bool "正常固件里的日志页（LVGL 屏上翻日志）"
+    default y
+    depends on ZMK_DISPLAY && DISPLAY
+    # 日志页用等宽字体 qf_font_log_10x16 才对得齐（定义在 qf_display_log_lvfont.c，
+    # 由 CMakeLists.txt 在 CONFIG_PROSPECTOR_DISPLAY_LOG_PAGE 下编进固件，不必再
+    # 依赖这里 select）。它是 10px 宽、16px 行高，于是
+    #   (MAX_COLS = 28) * 10px = 280px  正好铺满 280px 屏宽
+    #   (LINES    = 15) * 16px = 240px  正好铺满 240px 屏高
+    # 注意别换成 lv_font_unscii_16：那是全宽字体（adv_w = 256/16 = 16px），
+    # 一行只放得下 17 个字符，行高也变成 17px；也别退回 unscii_8（只有 8x9，太小）。
+    help
+      正常固件里多出一"页日志"：屏仍归 LVGL（状态屏照常工作），日志采集由
+      qf_display_log.c 提供 —— 一个额外的日志后端（与 USB/UART 后端并存，
+      屏上和串口是同一批日志）、一套环形行缓冲，最终的显示交给
+      custom_status_screen_log.c 的日志页（拆自 custom_status_screen.c）
+      用 lv_label 画出来。
+
+      本选项不新增固件，也不抢屏，代价只是常驻的行缓冲，加上每条日志
+      多做一次字符拷贝。
+
+      默认不显示日志页：开机仍然是正常的电量/状态主屏。要显示由应用调用：
+
+          #include "custom_status_screen.h"
+          display_log_page_show(true);   /* 任意上下文安全，含中断 */
+
+      按键/层/手势等触发入口由使用方决定，当前没有绑定。
+
+config BIG_LCD
+    bool "ST7789V 240x320：横屏用满 320 像素宽"
+    default n
+    help
+      装了 240x320 的 ST7789V 时打开。小屏是 240x280（旋转后 280x240，设备树
+      width=280 / x-offset=20）；打开后显示窗口改成 width=320 / x-offset=0，
+      状态屏内容照旧画在左边 280 里（右边多出的 40px 留空），日志页则能多排
+      几列字符（28 -> 32 列）。
+
+      重要：屏幕分辨率是编译期由设备树决定的，而 Zephyr 的 Kconfig 依赖设备树
+      生成（DT_HAS_*），Kconfig 跑在 DTS 之后 —— 所以本符号没法反过来去改设备树
+      （实测：pre_dt_board.cmake 里 CONFIG_* 还是空的；shield 的 CMakeLists 里
+      虽然能读到 CONFIG_*，但那时 zephyr.dts 已经生成完了）。因此设备树那半边
+      由构建时的宏控制，见各 shield 的 .overlay：
+
+          #ifdef BIG_LCD
+              width = <320>;  x-offset = <0>;
+          #else
+              width = <280>;  x-offset = <20>;
+          #endif
+
+      切换方式（corne_l_e73.sh / corne_l_ms.sh 里已带开关变量）：
+
+          west build ... -- -DDTS_EXTRA_CPPFLAGS=-DBIG_LCD \
+                             -DCONFIG_BIG_LCD=y \
+                             -DCONFIG_PROSPECTOR_DISPLAY_LOG_MAX_COLS=32
+
+      C 代码里用 IS_ENABLED(CONFIG_BIG_LCD) 判断即可。
+
+config PROSPECTOR_DISPLAY_LOG_MAX_COLS
+    int "日志页每行最多字符数"
+    range 8 46
+    default 28
+    depends on PROSPECTOR_DISPLAY_LOG_PAGE
+    help
+      保留每行最多多少字符，超宽的行自动折行（和串口终端一样）。
+
+      日志页用的是等宽字体 qf_font_log_10x16（每字符 10px 宽），铺满 280 像素
+      屏宽就是 280 / 10 = 28 个字符，所以默认 28。该值同时也决定行缓冲的
+      静态内存占用（RAM ≈ LINES * (MAX_COLS + 1) 字节），不要设太大。
+
+config PROSPECTOR_DISPLAY_LOG_LINES
+    int "环形行缓冲的行数"
+    range 4 30
+    default 15
+    depends on PROSPECTOR_DISPLAY_LOG_PAGE
+    help
+      保留最近多少行日志。日志页用的是 16px 行高（qf_font_log_10x16），铺满
+      240 像素屏高就是 240 / 16 = 15 行，所以默认 15。
+
+config PROSPECTOR_DISPLAY_LOG_LEVEL_PREFIX
+    bool "日志页显示 <inf> 这类日志等级前缀"
+    default n
+    depends on PROSPECTOR_DISPLAY_LOG_PAGE
+    help
+      默认关闭。280 像素宽只放得下 28 个字符，而 "<inf> " 前缀就要占 6 个，
+      关掉能明显减少折行。
+
+config PROSPECTOR_DISPLAY_LOG_TIMESTAMP
+    bool "日志页显示日志时间戳"
+    default n
+    depends on PROSPECTOR_DISPLAY_LOG_PAGE
+    help
+      时间戳形如 [00:00:12.345,678]，要占 21 个字符（接近一整行），所以
+      默认关闭。

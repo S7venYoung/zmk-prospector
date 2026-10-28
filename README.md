@@ -1,5 +1,11 @@
 # kblade ms2 九主题扫描仪分支
 
+## 仓库内硬件定义
+
+kblade board 和 ms2 配套模块已固定在 [hardware/prospector-zmk-module/](hardware/prospector-zmk-module/)。
+两个构建脚本均引用本地目录，west 不再拉取此硬件模块。
+板名、引脚、分区保持原样；来源与更新说明见 [hardware/UPSTREAM.md](hardware/UPSTREAM.md)。
+
 本分支是独立广播扫描仪，完整说明见 [scanner/README.md](scanner/README.md)。
 使用 `prospector_ms2 scanner_display`，不是 `corne_dongle`。原 Dongle 版保留在
 [`codex/kblade-dya-four-themes`](https://github.com/S7venYoung/zmk-prospector/tree/codex/kblade-dya-four-themes)。

@@ -1,0 +1,8 @@
+board:
+  name: kblade
+  full_name: KBlade nRF52840
+  vendor: kblade
+  socs:
+    - name: nrf52840
+      variants:
+        - name: zmk

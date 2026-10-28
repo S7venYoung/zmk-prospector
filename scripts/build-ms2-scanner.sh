@@ -5,7 +5,7 @@ if [[ $# -lt 1 || $# -gt 2 || ( $# -eq 2 && $2 != --dry-run ) ]]; then
 fi
 workspace=$(cd -- "$1" && pwd)
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
-module="$workspace/prospector-zmk-module"
+module="$repo/hardware/prospector-zmk-module"
 for required in "$workspace/zmk/app/include/zmk/studio/custom.h" \
     "$module/boards/kblade/board.yml" "$module/boards/shields/prospector_ms2/prospector_ms2.overlay"; do
   [[ -f "$required" ]] || { echo "Missing pinned dependency: $required" >&2; exit 1; }
