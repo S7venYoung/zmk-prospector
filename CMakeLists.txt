@@ -1,10 +1,4 @@
-add_subdirectory(host-status)
-add_subdirectory(themes/walle)
-add_subdirectory(themes/codex-status)
-add_subdirectory(themes/weather-clock)
-add_subdirectory(themes/retro-workstation)
-
-add_subdirectory(themes/scanner-original)
+add_subdirectory(display-themes)
 
 if(CONFIG_ZMK_KEY_STATS)
   target_include_directories(app PRIVATE include)

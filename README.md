@@ -1,8 +1,13 @@
-# Corne ms2 Prospector Dongle — DYA + 四主题
+# Corne ms2 Prospector Dongle — DYA + 五主题
 
 目标硬件使用 `kblade//zmk`，Shield 为 `prospector_ms2 corne_dongle`。
 保留 ms2 的 ST7789V 接线、280×240 横屏方向、x-offset=20、背光驱动及分区布局，
 接入 Prospector Dongle 项目所用的 `cormoran/zmk main+dya` 核心。
+
+## 可引用主题模块
+
+五个主题统一位于 [display-themes/](display-themes/README.md)，包含独立 ZMK 模块入口、
+字体、DYA 适配、接入示例和主机测试。原 `themes/` 目录已删除。
 
 ## DYA 功能
 
@@ -98,10 +103,10 @@ GitHub Actions 工作流只接受 **workflow_dispatch**，提交和 PR 不会触
 
 ## 已完成的检查与边界
 
-- 编译并运行真实 LVGL 与四个渲染器：120 种主题/配色/状态组合，1199 个前景边界，
+- 编译并运行真实 LVGL 与五个渲染器：120 种主题/配色/状态组合，1199 个前景边界，
   圆角越界、父容器裁切、文字框重叠均为 0；另有 50 次前后循环切换的断言检查。
   覆盖长层名、1%/100% 电量、全部修饰键组合，并检查切换配色后层名保持完整。
-- 主机模拟 DYA 设置事件：四主题选择、延后到显示线程应用、三主题配色、
+- 主机模拟 DYA 设置事件：五主题选择、延后到显示线程应用、三主题配色、
   非法主题拒绝、左右手 slot 交换。
 - YADS 纯状态机测试：五字母滚动、退格、修饰键清空、快捷键完成、非默认层、
   5 秒空闲、32 位时间回绕和离开主题后的清空。
@@ -112,4 +117,4 @@ GitHub Actions 工作流只接受 **workflow_dispatch**，提交和 PR 不会触
 实机验收；构建成功后仍需确认 USB/DYA、左右手连接、电量归属、主题即时切换
 与断电恢复。构建脚本和工作流不自动刷写设备。
 
-实现与上游版本见 [移植说明](themes/scanner-original/README.md)。
+实现与上游版本见 [移植说明](display-themes/README.md)。

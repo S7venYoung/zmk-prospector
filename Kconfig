@@ -1,19 +1,5 @@
 menu "Prospector display themes"
-
-config ZMK_PROSPECTOR_HOST_STATUS
-    bool "Prospector host time and weather service"
-    help
-      Exposes host-provided clock and weather data through a standalone
-      ZMK Studio custom subsystem. This service draws nothing; display themes
-      can opt in and choose their own presentation.
-
-rsource "themes/walle/Kconfig"
-rsource "themes/codex-status/Kconfig"
-rsource "themes/weather-clock/Kconfig"
-rsource "themes/retro-workstation/Kconfig"
-
-rsource "themes/scanner-original/Kconfig"
-
+rsource "display-themes/Kconfig"
 endmenu
 
 config ZMK_KEY_STATS

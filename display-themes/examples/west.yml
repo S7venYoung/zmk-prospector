@@ -1,0 +1,10 @@
+# Merge these projects into your existing manifest. This is not a full ZMK workspace.
+manifest:
+  projects:
+    - name: prospector-zmk-module
+      url: https://github.com/kbladewht/prospector-zmk-module
+      revision: 37146e417cd95ec95ab144ed9ebb6632da06bd8e
+    - name: zmk-prospector
+      url: https://github.com/S7venYoung/zmk-prospector
+      revision: codex/kblade-dya-four-themes # Pin a validated extraction commit in your project.
+      # Root module automatically includes display-themes/. Do not add it twice.

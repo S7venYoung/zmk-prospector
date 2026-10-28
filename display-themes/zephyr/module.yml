@@ -1,0 +1,4 @@
+name: prospector-display-themes
+build:
+  cmake: .
+  kconfig: Kconfig
