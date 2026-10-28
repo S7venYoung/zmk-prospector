@@ -6,7 +6,7 @@
  */
 #include "industrial_layout.h"
 #include "fonts_carrefinho.h"
-#include <src/draw/lv_draw_triangle.h>
+#include <draw/lv_draw_triangle.h>
 #include <stdio.h>
 #include <string.h>
 

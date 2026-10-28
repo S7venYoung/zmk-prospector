@@ -9,7 +9,7 @@ out.mkdir(parents=True,exist_ok=True)
 shared=module/'boards/shields/src'
 flags=['-include','stdlib.h','-DLV_USE_LOG=1','-DLV_LOG_PRINTF=1','-DLV_LOG_LEVEL=2','-DLV_ASSERT_HANDLER=abort();','-std=c99','-O0','-g','-DLV_CONF_SKIP','-DLV_COLOR_DEPTH=24',
        '-DCONFIG_ZMK_PROSPECTOR_DYA_SETTINGS=0','-DCONFIG_ZMK_LOG_LEVEL=1','-DCONFIG_PROSPECTOR_DEFAULT_LAYOUT=2',
-       '-I'+str(lvgl),'-I'+str(root/'tests/ms2_host/stubs'),
+       '-I'+str(lvgl),'-I'+str(lvgl/'src'),'-I'+str(root/'tests/ms2_host/stubs'),
        '-I'+str(root/'themes/scanner-original/src'),'-I'+str(shared)]
 sources=list((lvgl/'src').rglob('*.c'))
 sources += [p for p in (root/'themes/scanner-original/src').glob('*.c') if p.name not in {'yads_input.c', 'dya_settings.c', 'dya_battery_bridge.c'}]
