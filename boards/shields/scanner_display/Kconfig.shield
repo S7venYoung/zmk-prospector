@@ -1,0 +1,2 @@
+config SHIELD_SCANNER_DISPLAY
+    def_bool $(shields_list_contains,scanner_display)

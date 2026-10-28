@@ -1,0 +1,13 @@
+/* SPDX-License-Identifier: MIT; no physical matrix and no split transport. */
+#include <dt-bindings/zmk/matrix_transform.h>
+#include <physical_layouts.dtsi>
+/ {
+    chosen { zmk,kscan = &scanner_kscan; zmk,matrix-transform = &scanner_transform; zmk,physical-layout = &scanner_layout; };
+    scanner_kscan: scanner_kscan { compatible = "zmk,kscan-mock"; rows = <1>; columns = <1>; event-period = <1000>; events = <>; };
+    scanner_layout: scanner_layout {
+        compatible = "zmk,physical-layout"; display-name = "Scanner display";
+        transform = <&scanner_transform>; kscan = <&scanner_kscan>;
+        keys = <&key_physical_attrs 100 100 0 0 0 0 0>;
+    };
+    scanner_transform: scanner_transform { compatible = "zmk,matrix-transform"; rows = <1>; columns = <1>; map = <RC(0,0)>; };
+};

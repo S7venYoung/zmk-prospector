@@ -178,3 +178,8 @@ void dashboard_layout_destroy(void){
     if(curve_timer)lv_timer_delete(curve_timer);curve_timer=NULL;
     if(root)lv_obj_delete(root);root=NULL;curve=NULL;ready=false;history_count=history_head=0;history_valid=false;
 }
+
+void dashboard_layout_reset_history(void) {
+    history_count=history_head=0;history_valid=false;
+    if(curve)lv_obj_invalidate(curve);
+}

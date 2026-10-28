@@ -1,5 +1,5 @@
 include:
   - board: kblade//zmk
-    shield: prospector_ms2 corne_dongle
+    shield: prospector_ms2 scanner_display
     snippet: studio-rpc-usb-uart zmk-usb-logging
-    artifact-name: corne_ms2_dya_nine_themes
+    artifact-name: kblade_ms2_scanner_nine_themes

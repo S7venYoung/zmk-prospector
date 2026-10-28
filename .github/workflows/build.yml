@@ -1,4 +1,4 @@
-name: Build ms2 DYA dongle (manual only)
+name: Build ms2 nine-theme scanner (manual only)
 on:
   workflow_dispatch:
 jobs:
@@ -41,14 +41,14 @@ jobs:
             zmk-behavior-*
             zmk-stdlib
           key: ms2-dya-v1-${{ runner.os }}-${{ hashFiles('zmk-prospector/west.yml') }}
-      - name: Build kblade ms2 with DYA and nine runtime themes
-        run: bash zmk-prospector/scripts/build-ms2-dya.sh "$GITHUB_WORKSPACE"
+      - name: Build kblade ms2 scanner with nine runtime themes
+        run: bash zmk-prospector/scripts/build-ms2-scanner.sh "$GITHUB_WORKSPACE"
       - uses: actions/upload-artifact@v4
         with:
-          name: corne_ms2_dya_nine_themes
+          name: kblade_ms2_scanner_nine_themes
           path: |
-            build-ms2-dya/zephyr/zmk.uf2
-            build-ms2-dya/zephyr/zmk.elf
-            build-ms2-dya/zephyr/.config
+            build-ms2-scanner/zephyr/zmk.uf2
+            build-ms2-scanner/zephyr/zmk.elf
+            build-ms2-scanner/zephyr/.config
           if-no-files-found: error
           include-hidden-files: true

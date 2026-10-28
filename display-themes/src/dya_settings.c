@@ -34,6 +34,9 @@ DISPLAY_SETTING(display_palette, 0, 0, 3);
 DISPLAY_SETTING(display_brightness, 60, 1, 100);
 DISPLAY_SETTING(left_hand_slot, 0, 0, 1);
 DISPLAY_SETTING(right_hand_slot, 1, 0, 1);
+#if IS_ENABLED(CONFIG_ZMK_PROSPECTOR_BROADCAST_SCANNER)
+DISPLAY_SETTING(scanner_keyboard, 0, 0, CONFIG_PROSPECTOR_MAX_KEYBOARDS-1);
+#endif
 static atomic_t dirty = ATOMIC_INIT(1);
 static lv_timer_t *apply_timer;
 static int32_t read_value(const struct zmk_custom_setting *setting, int32_t fallback) {
@@ -84,3 +87,10 @@ int prospector_dya_hand_slot(int hand) {
     if (left == right) return -1;
     return hand ? right : left;
 }
+
+#if IS_ENABLED(CONFIG_ZMK_PROSPECTOR_BROADCAST_SCANNER)
+int prospector_dya_scanner_keyboard(void) {
+    int value=read_value(&scanner_keyboard,0);
+    return value>=0&&value<CONFIG_PROSPECTOR_MAX_KEYBOARDS?value:-1;
+}
+#endif

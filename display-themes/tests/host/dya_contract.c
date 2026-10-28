@@ -22,5 +22,10 @@ void test_dya_contract(void) {
     left_hand_slot_value=1;right_hand_slot_value=0;
     assert(prospector_dya_hand_slot(0)==1&&prospector_dya_hand_slot(1)==0);
     right_hand_slot_value=1;assert(prospector_dya_hand_slot(0)==-1);
+#if IS_ENABLED(CONFIG_ZMK_PROSPECTOR_BROADCAST_SCANNER)
+    assert(prospector_dya_scanner_keyboard()==0);
+    scanner_keyboard_value=2;assert(prospector_dya_scanner_keyboard()==2);
+    scanner_keyboard_value=99;assert(prospector_dya_scanner_keyboard()==-1);
+#endif
     prospector_dya_stop();
 }

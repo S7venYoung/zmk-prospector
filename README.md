@@ -1,3 +1,12 @@
+# kblade ms2 九主题扫描仪分支
+
+本分支是独立广播扫描仪，完整说明见 [scanner/README.md](scanner/README.md)。
+使用 `prospector_ms2 scanner_display`，不是 `corne_dongle`。原 Dongle 版保留在
+[`codex/kblade-dya-four-themes`](https://github.com/S7venYoung/zmk-prospector/tree/codex/kblade-dya-four-themes)。
+以下为共用主题和原 Dongle 功能背景；扫描仪功能范围与构建入口以扫描仪说明为准。
+
+---
+
 # Corne ms2 Prospector Dongle — DYA + 九主题
 
 目标硬件使用 `kblade//zmk`，Shield 为 `prospector_ms2 corne_dongle`。

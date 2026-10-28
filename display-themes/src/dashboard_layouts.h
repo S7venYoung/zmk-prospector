@@ -7,3 +7,5 @@
 lv_obj_t *dashboard_layout_create(lv_obj_t *parent, prospector_layout_t style);
 void dashboard_layout_update(const struct prospector_keyboard_data *data,const char *name);
 void dashboard_layout_destroy(void);
+
+void dashboard_layout_reset_history(void);

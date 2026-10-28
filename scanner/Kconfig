@@ -1,0 +1,8 @@
+config ZMK_PROSPECTOR_BROADCAST_SCANNER
+    bool "Nine-theme broadcast scanner on kblade ms2"
+    depends on ZMK_PROSPECTOR_SCANNER_ORIGINAL && BT_OBSERVER
+    depends on !ZMK_SPLIT && !ZMK_BLE
+    select PROSPECTOR_MODE_SCANNER
+    help
+      Remote keyboard advertisements replace local HID state.
+      Bluetooth observer only; display settings remain available over USB.

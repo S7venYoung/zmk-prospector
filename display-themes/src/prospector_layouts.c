@@ -69,7 +69,7 @@ static void paint(void) {
     char name[32];
     memcpy(name, cached.current_layer_name, sizeof(cached.current_layer_name));
     name[sizeof(cached.current_layer_name)] = '\0';
-#if IS_ENABLED(CONFIG_ZMK_PROSPECTOR_DYA_SETTINGS)
+#if IS_ENABLED(CONFIG_ZMK_PROSPECTOR_DYA_SETTINGS) && !IS_ENABLED(CONFIG_ZMK_PROSPECTOR_BROADCAST_SCANNER)
     const char *live_name = zmk_keymap_layer_name(
         zmk_keymap_layer_index_to_id(cached.active_layer));
     if (live_name) snprintf(name, sizeof(name), "%s", live_name);

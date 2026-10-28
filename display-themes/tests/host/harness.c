@@ -154,7 +154,7 @@ int main(int argc,char **argv) {
                     .wpm_value=state*40,.battery_level=state==5?100:state==4?1:state?85:0,.peripheral_battery={state==5?100:state==4?1:state==2?0:72,0,0},
                     .modifier_flags=palette==0&&state==1?0xff:(palette*6+state)%16,.profile_slot=state%5,.usb_connected=state==1,
                     .ble_connected=state==2,.ble_bonded=state>1,.has_dynamic_data=true};
-                memcpy(data.current_layer_name,state==3?"WWWWWWWW":"BASE",8);
+                if(state==3)memcpy(data.current_layer_name,"WWWWWWWW",8);else memcpy(data.current_layer_name,"BASE",5);
                 if(style>=5 && (palette & 1)) data.modifier_flags <<= 4;
                 if(style>=5 && state==1) {
                     data.active_layer=0; data.wpm_value=42; data.ble_connected=true;
