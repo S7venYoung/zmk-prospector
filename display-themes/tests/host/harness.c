@@ -67,7 +67,7 @@ static void check_overlaps(const char *theme) {
 }
 static void inspect(lv_obj_t *o,const char *theme) {
     if(lv_obj_has_flag(o,LV_OBJ_FLAG_HIDDEN))return;
-    if(lv_obj_check_type(o,&lv_arc_class) || lv_obj_check_type(o,&lv_image_class) || lv_obj_check_type(o,&lv_bar_class)) {
+    if(lv_obj_has_flag(o,LV_OBJ_FLAG_USER_1) || lv_obj_check_type(o,&lv_arc_class) || lv_obj_check_type(o,&lv_image_class) || lv_obj_check_type(o,&lv_bar_class)) {
         lv_area_t a;lv_obj_get_coords(o,&a);inspected++;
         if(!safe(a.x1,a.y1)||!safe(a.x2,a.y1)||!safe(a.x1,a.y2)||!safe(a.x2,a.y2)) {
             printf("UNSAFE %s indicator bounds=%d,%d,%d,%d\n",theme,a.x1,a.y1,a.x2,a.y2);failures++;
@@ -111,6 +111,17 @@ static int verify_modifiers(lv_obj_t *o, uint8_t flags, int style) {
         found += verify_modifiers(lv_obj_get_child(o,i), flags, style);
     return found;
 }
+static int verify_connection_icon(lv_obj_t *o,const char *expected) {
+    int found=0;
+    if(lv_obj_check_type(o,&lv_label_class)) {
+        const char *s=lv_label_get_text(o);
+        if(!strcmp(s,LV_SYMBOL_USB)||!strcmp(s,LV_SYMBOL_BLUETOOTH)||!strcmp(s,LV_SYMBOL_CLOSE)) {
+            assert(!strcmp(s,expected));found++;
+        }
+    }
+    for(uint32_t i=0;i<lv_obj_get_child_count(o);i++)found+=verify_connection_icon(lv_obj_get_child(o,i),expected);
+    return found;
+}
 int main(int argc,char **argv) {
     setbuf(stdout,NULL);
     lv_init();lv_display_t *d=lv_display_create(280,240);
@@ -146,7 +157,7 @@ int main(int argc,char **argv) {
                 memcpy(data.current_layer_name,state==3?"WWWWWWWW":"BASE",8);
                 if(style>=5 && (palette & 1)) data.modifier_flags <<= 4;
                 if(style>=5 && state==1) {
-                    data.active_layer=0; data.wpm_value=42;
+                    data.active_layer=0; data.wpm_value=42; data.ble_connected=true;
                     data.battery_level=83; data.peripheral_battery[0]=79; data.modifier_flags=0x0a;
                 }
                 host_long_name=state==3;
@@ -164,6 +175,7 @@ int main(int argc,char **argv) {
                 }
                 for(int t=0;t<5;t++){host_ticks+=100;lv_tick_inc(100);lv_timer_handler();}
                 lv_obj_update_layout(screen);text_count=0;inspect(screen,names[style-1]);check_overlaps(names[style-1]);
+                if(style>=5)assert(verify_connection_icon(screen,data.usb_connected?LV_SYMBOL_USB:data.ble_connected?LV_SYMBOL_BLUETOOTH:LV_SYMBOL_CLOSE)==1);
                 if(style>=5)assert(verify_modifiers(screen,data.modifier_flags,style)==4);
                 if(style==7) {
                     lv_obj_t *dash=lv_obj_get_child(screen,0);int gauges=0;
@@ -195,6 +207,31 @@ int main(int argc,char **argv) {
         lv_screen_load(parking_screen);
         prospector_layouts_destroy();lv_obj_delete(screen);
     }
+    /* A real 60-second sampling trace; fixture values are not production data. */
+    lv_obj_t *trace_screen=lv_obj_create(NULL);lv_obj_remove_style_all(trace_screen);
+    lv_obj_set_size(trace_screen,280,240);lv_screen_load(trace_screen);prospector_layouts_init(trace_screen);
+    prospector_layouts_set_style(PROSPECTOR_LAYOUT_MONO);
+    struct prospector_keyboard_data trace={.usb_connected=true,.has_dynamic_data=true,.battery_level=83,.peripheral_battery={79,0,0},.modifier_flags=0x0a};
+    memcpy(trace.current_layer_name,"BASE",5);
+    const uint8_t wave[]={0,2,6,9,20,32,45,60,48,25,16,22,41,58,73,88,70,56,37,30,18,0,0,5,21,42,62,80,95,76,59,42};
+    for(unsigned k=0;k<60;k++) {
+        trace.wpm_value=wave[k%32];prospector_layouts_update(&trace);
+        host_ticks+=1000;lv_tick_inc(1000);lv_timer_handler();
+    }
+    trace.wpm_value=42;prospector_layouts_update(&trace);lv_refr_now(d);
+    lv_obj_update_layout(trace_screen);text_count=0;inspect(trace_screen,"mono-curve");check_overlaps("mono-curve");
+    if(argc>1){char path[1024];snprintf(path,sizeof(path),"%s/mono-curve.ppm",argv[1]);FILE*f=fopen(path,"wb");fprintf(f,"P6\n280 240\n255\n");fwrite(frame,1,sizeof(frame),f);fclose(f);}
+    unsigned orange=0;
+    for(int y=145;y<170;y++)for(int x=22;x<186;x++) {
+        unsigned offset=(y*280+x)*3;
+        if(frame[offset]>200&&frame[offset+1]>90&&frame[offset+1]<190&&frame[offset+2]<100)orange++;
+    }
+    assert(orange>20); /* The sampled waveform must actually be drawn. */
+    for(int k=0;k<60;k++){lv_tick_inc(1000);host_ticks+=1000;lv_timer_handler();}
+    lv_refr_now(d);unsigned flat_before=flush_count;
+    lv_tick_inc(1000);host_ticks+=1000;lv_timer_handler();lv_refr_now(d);
+    assert(flush_count==flat_before); /* A full flat history does not repaint. */
+    lv_screen_load(parking_screen);prospector_layouts_destroy();lv_obj_delete(trace_screen);
     lv_obj_t *dya_screen=lv_obj_create(NULL);lv_obj_remove_style_all(dya_screen);
     lv_obj_set_size(dya_screen,280,240);prospector_layouts_init(dya_screen);test_dya_contract();
     prospector_layouts_destroy();lv_obj_delete(dya_screen);

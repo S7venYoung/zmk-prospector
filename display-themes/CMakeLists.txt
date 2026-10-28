@@ -11,6 +11,7 @@ if(CONFIG_ZMK_PROSPECTOR_SCANNER_ORIGINAL)
       TARGET_DIRECTORY app PROPERTIES HEADER_FILE_ONLY ON)
   target_include_directories(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${ms2_src})
   target_sources(app PRIVATE
+      src/connection_icon.c src/connection_icons_20.c
       src/prospector_layouts.c src/field_layout.c
       src/operator_layout.c src/radii_layout.c
       src/dashboard_layouts.c src/dashboard_numeric_52.c src/dashboard_base_72.c src/dashboard_mono_96.c

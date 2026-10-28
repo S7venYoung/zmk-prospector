@@ -1,6 +1,7 @@
 /* Copyright (c) 2026 S7venYoung; SPDX-License-Identifier: MIT */
 #include "segment_layout.h"
 #include "fonts_carrefinho.h"
+#include "connection_icon.h"
 #include <stdio.h>
 #include <string.h>
 LV_FONT_DECLARE(segment_18);
@@ -12,6 +13,7 @@ LV_FONT_DECLARE(segment_80);
 #define DARK 0x060706
 #define DIM 0x443719
 #define OFF 0x65635A
+static lv_obj_t *status_icon;
 static lv_obj_t *root,*layer,*speed,*output,*numbers[2],*cells[2][14],*mods[4];
 static bool ready,last_valid[2];
 static uint8_t last_speed,last_output,last_levels[2],last_mods;
@@ -32,10 +34,11 @@ lv_obj_t *segment_layout_create(lv_obj_t *parent) {
     ready=false;layer_buf[0]=0;
     root=box(parent,0,0,280,240,DARK,0);
     label(root,22,18,100,&segment_18,"CORNE");box(root,20,41,240,1,AMBER,0);
-    box(root,207,15,1,20,AMBER,0);
-    lv_obj_t *badge=box(root,217,15,43,21,DARK,4);
+    box(root,192,15,1,20,AMBER,0);
+    lv_obj_t *badge=box(root,201,15,59,23,DARK,4);
     lv_obj_set_style_border_color(badge,lv_color_hex(AMBER),0);lv_obj_set_style_border_width(badge,1,0);
-    output=label(badge,3,2,38,&segment_18,"USB");
+    status_icon=connection_icon_create(badge,2,1,AMBER);
+    output=label(badge,21,3,36,&segment_18,"USB");
     label(root,20,58,92,&segment_18,"LAYER");
     layer=label(root,20,82,94,&segment_36,"BASE");
     box(root,116,53,1,78,AMBER,0);
@@ -79,6 +82,7 @@ void segment_layout_update(const struct prospector_keyboard_data *data,const cha
         lv_obj_set_width(speed,last_speed>=100?75:86);
         lv_obj_set_y(speed,49+(80-font->line_height)/2);lv_label_set_text_static(speed,speed_buf);
     }
+    connection_icon_update(status_icon,data->usb_connected,data->ble_connected);
     uint8_t out=data->usb_connected?2:data->ble_connected?1:0;
     if(!ready||out!=last_output) {last_output=out;snprintf(output_buf,sizeof(output_buf),"%s",out==2?"USB":out?"BLE":"OFF");lv_label_set_text_static(output,output_buf);}
     uint8_t levels[]={data->battery_level,data->peripheral_battery[0]};

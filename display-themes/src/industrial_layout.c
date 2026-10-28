@@ -6,6 +6,7 @@
  */
 #include "industrial_layout.h"
 #include "fonts_carrefinho.h"
+#include "connection_icon.h"
 #include <draw/lv_draw_triangle.h>
 #include <stdio.h>
 #include <string.h>
@@ -25,6 +26,7 @@ LV_FONT_DECLARE(industrial_battery_32);
 #define MUTED 0x777C76
 #define PANEL 0x1B2420
 
+static lv_obj_t *status_icon;
 static lv_obj_t *root, *layer, *wpm, *wpm_unit, *output, *battery[2], *segments[2][8];
 static lv_obj_t *modifier_keys[4], *modifier_symbols[4];
 static bool rendered;
@@ -103,8 +105,8 @@ lv_obj_t *industrial_layout_create(lv_obj_t *parent) {
     lv_obj_t *badge = box(root, 210, 15, 54, 30, GOLD, 6);
     lv_obj_set_style_border_width(badge, 3, 0);
     lv_obj_set_style_border_color(badge, lv_color_hex(INK), 0);
-    output = text(badge, 0, 0, 42, &impact_20, INK, "OFF");
-    lv_obj_center(output);
+    status_icon = connection_icon_create(badge, 2, 4, INK);
+    output = text(badge, 21, 5, 30, &impact_16, INK, "OFF");
     /* Transparent drawing layer sits behind all foreground text. */
     lv_obj_t *decoration = box(root, 0, 0, 280, 240, INK, 0);
     lv_obj_set_style_bg_opa(decoration, LV_OPA_TRANSP, 0);
@@ -170,6 +172,7 @@ void industrial_layout_update(const struct prospector_keyboard_data *data, const
         lv_obj_set_width(wpm_unit, unit_size.x); lv_obj_set_x(wpm_unit, start + number_size.x + 8);
         last_wpm = data->wpm_value;
     }
+    connection_icon_update(status_icon,data->usb_connected,data->ble_connected);
     uint8_t output_state = data->usb_connected ? 2 : data->ble_connected ? 1 : 0;
     if (!rendered || last_output != output_state) {
         snprintf(output_text, sizeof(output_text), "%s", output_state == 2 ? "USB" : output_state == 1 ? "BLE" : "OFF");

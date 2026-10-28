@@ -2,6 +2,8 @@
  * ORBIT / SPLIT / MONO: state changes only, no animation or texture buffers. */
 #include "dashboard_layouts.h"
 #include "fonts_carrefinho.h"
+#include "connection_icon.h"
+#include <draw/lv_draw_line.h>
 #include <stdio.h>
 #include <string.h>
 LV_FONT_DECLARE(impact_16);
@@ -10,7 +12,42 @@ LV_FONT_DECLARE(industrial_display_56);
 LV_FONT_DECLARE(industrial_numeric_32);
 LV_FONT_DECLARE(dashboard_numeric_52);
 LV_FONT_DECLARE(dashboard_base_72);
-LV_FONT_DECLARE(dashboard_mono_96);
+static lv_obj_t *status_icon;
+#define HISTORY_POINTS 60
+static lv_obj_t *curve;
+static lv_timer_t *curve_timer;
+static uint8_t history[HISTORY_POINTS],history_count,history_head,latest_wpm;
+static bool history_valid;
+static void curve_draw(lv_event_t *e) {
+    lv_area_t a;lv_obj_get_coords(curve,&a);
+    lv_draw_line_dsc_t line;lv_draw_line_dsc_init(&line);line.width=1;line.opa=LV_OPA_COVER;
+    line.color=lv_color_hex(0x3B3D3B);
+    line.p1=(lv_point_precise_t){a.x1,a.y2-1};line.p2=(lv_point_precise_t){a.x2,a.y2-1};
+    lv_draw_line(lv_event_get_layer(e),&line);
+    if(history_count<2)return;
+    unsigned ceiling=60;
+    for(int i=0;i<history_count;i++)if(history[i]>ceiling)ceiling=history[i];
+    ceiling=((ceiling+19)/20)*20;
+    line.color=lv_color_hex(0xFF913F);line.width=2;line.round_start=1;line.round_end=1;
+    for(int i=1;i<history_count;i++) {
+        unsigned first=history_count==HISTORY_POINTS?history_head:0;
+        unsigned prev=history[(first+i-1)%HISTORY_POINTS],now=history[(first+i)%HISTORY_POINTS];
+        int x0=a.x1+1+(HISTORY_POINTS-history_count+i-1)*(a.x2-a.x1-2)/(HISTORY_POINTS-1);
+        int x1=a.x1+1+(HISTORY_POINTS-history_count+i)*(a.x2-a.x1-2)/(HISTORY_POINTS-1);
+        int y0=a.y2-1-prev*(a.y2-a.y1-2)/ceiling;
+        int y1=a.y2-1-now*(a.y2-a.y1-2)/ceiling;
+        line.p1=(lv_point_precise_t){x0,y0};line.p2=(lv_point_precise_t){x1,y1};
+        lv_draw_line(lv_event_get_layer(e),&line);
+    }
+}
+static void curve_sample(lv_timer_t *timer) {
+    (void)timer;if(!curve||!history_valid)return;
+    bool unchanged=history_count==HISTORY_POINTS;
+    for(int i=0;i<history_count&&unchanged;i++)if(history[i]!=latest_wpm)unchanged=false;
+    history[history_head]=latest_wpm;history_head=(history_head+1)%HISTORY_POINTS;
+    if(history_count<HISTORY_POINTS)history_count++;
+    if(!unchanged)lv_obj_invalidate(curve);
+}
 static lv_obj_t *root,*layer,*speed,*output,*numbers[2],*meters[2],*mods[4],*index_label;
 static prospector_layout_t kind;
 static uint32_t accent,muted;
@@ -43,6 +80,7 @@ static lv_obj_t *bar(int x,int y,int w,int h,uint32_t track) {
 }
 lv_obj_t *dashboard_layout_create(lv_obj_t *parent,prospector_layout_t style) {
     kind=style;ready=false;name_buf[0]=0;index_label=NULL;
+    curve=NULL;curve_timer=NULL;history_count=history_head=0;history_valid=false;
     accent=kind==PROSPECTOR_LAYOUT_ORBIT?0x27E4F2:kind==PROSPECTOR_LAYOUT_SPLIT?0x74EAF4:0xFF913F;
     muted=kind==PROSPECTOR_LAYOUT_ORBIT?0x6A7D8B:0x747779;
     root=box(parent,0,0,280,240,kind==PROSPECTOR_LAYOUT_ORBIT?0x031421:0x131515,0);
@@ -73,9 +111,15 @@ lv_obj_t *dashboard_layout_create(lv_obj_t *parent,prospector_layout_t style) {
         index_label=text(22,46,35,&impact_20,accent,"01");box(root,22,72,18,1,paper,0);
         layer=text(20,82,202,&industrial_display_56,paper,"BASE");
         speed=text(22,178,63,&industrial_numeric_32,accent,"42");text(90,188,38,&impact_16,paper,"WPM");
+        curve=box(root,22,145,164,25,0x131515,0);
+        lv_obj_add_flag(curve,LV_OBJ_FLAG_USER_1);
+        lv_obj_add_event_cb(curve,curve_draw,LV_EVENT_DRAW_MAIN,NULL);
+        text(195,148,30,&impact_16,muted,"60s");
+        curve_timer=lv_timer_create(curve_sample,1000,NULL);
         box(root,139,181,1,43,muted,0);
         for(int i=0;i<2;i++){meters[i]=bar(153,186+i*18,70,8,0x3B3D3B);numbers[i]=text(231,181+i*18,32,&impact_16,paper,"--");}
     }
+    status_icon=connection_icon_create(root,kind==PROSPECTOR_LAYOUT_ORBIT?200:kind==PROSPECTOR_LAYOUT_SPLIT?118:132,kind==PROSPECTOR_LAYOUT_SPLIT?17:15,paper);
     const char *symbols[]={SYMBOL_COMMAND,SYMBOL_CONTROL,SYMBOL_OPTION,SYMBOL_SHIFT};
     for(int i=0;i<4;i++) {
         int x,y,w;
@@ -88,6 +132,7 @@ lv_obj_t *dashboard_layout_create(lv_obj_t *parent,prospector_layout_t style) {
 }
 void dashboard_layout_update(const struct prospector_keyboard_data *d,const char *name) {
     if(!root||!d)return;
+    if(kind==PROSPECTOR_LAYOUT_MONO){latest_wpm=d->wpm_value;history_valid=d->has_dynamic_data;}
     char upper[32];size_t n=0;if(!name||!*name)name="BASE";
     for(;name[n]&&n<sizeof(upper)-1;n++)upper[n]=name[n]>='a'&&name[n]<='z'?name[n]-32:name[n];upper[n]=0;
     if(!strcmp(upper,"DEFAULT LAYER")||!strcmp(upper,"BASE LAYER"))strcpy(upper,"BASE");
@@ -96,9 +141,9 @@ void dashboard_layout_update(const struct prospector_keyboard_data *d,const char
         strcpy(name_buf,upper);const lv_font_t *font=&impact_20;
         if(kind==PROSPECTOR_LAYOUT_MONO){font=&industrial_display_56;lv_point_t s;lv_text_get_size(&s,upper,font,0,0,LV_COORD_MAX,0);if(s.x>202)font=&FR_Regular_36;lv_text_get_size(&s,upper,font,0,0,LV_COORD_MAX,0);if(s.x>202)font=&impact_20;}
         if(kind==PROSPECTOR_LAYOUT_SPLIT&&!strcmp(upper,"BASE"))font=&dashboard_base_72;
-        if(kind==PROSPECTOR_LAYOUT_MONO&&!strcmp(upper,"BASE"))font=&dashboard_mono_96;
+        if(kind==PROSPECTOR_LAYOUT_MONO&&!strcmp(upper,"BASE"))font=&dashboard_base_72;
         lv_obj_set_style_text_font(layer,font,0);lv_obj_set_height(layer,font->line_height);
-        lv_obj_set_y(layer,kind==PROSPECTOR_LAYOUT_ORBIT?67:kind==PROSPECTOR_LAYOUT_SPLIT?78+(74-font->line_height)/2:68+(98-font->line_height)/2);
+        lv_obj_set_y(layer,kind==PROSPECTOR_LAYOUT_ORBIT?67:kind==PROSPECTOR_LAYOUT_SPLIT?78+(74-font->line_height)/2:69+(74-font->line_height)/2);
         lv_label_set_text(layer,name_buf);
     }
     if(!ready||last_speed!=d->wpm_value) {
@@ -108,6 +153,7 @@ void dashboard_layout_update(const struct prospector_keyboard_data *d,const char
         lv_obj_set_y(speed,kind==PROSPECTOR_LAYOUT_ORBIT?96+(54-font->line_height)/2:kind==PROSPECTOR_LAYOUT_SPLIT?36+(54-font->line_height)/2:178);
         lv_label_set_text_static(speed,speed_buf);
     }
+    connection_icon_update(status_icon,d->usb_connected,d->ble_connected);
     uint8_t out=d->usb_connected?2:d->ble_connected?1:0;
     if(!ready||last_out!=out){last_out=out;snprintf(out_buf,sizeof(out_buf),"%s",out==2?"USB":out?"BLE":"OFF");lv_label_set_text_static(output,out_buf);}
     if(index_label&&(!ready||last_layer!=d->active_layer)){last_layer=d->active_layer;snprintf(index_buf,sizeof(index_buf),"%02u",(unsigned)last_layer+1);lv_label_set_text_static(index_label,index_buf);}
@@ -128,4 +174,7 @@ void dashboard_layout_update(const struct prospector_keyboard_data *d,const char
     for(int i=0;i<4;i++)if(!ready||!!(last_mods&masks[i])!=!!(d->modifier_flags&masks[i]))lv_obj_set_style_text_color(mods[i],lv_color_hex(d->modifier_flags&masks[i]?accent:muted),0);
     last_mods=d->modifier_flags;ready=true;
 }
-void dashboard_layout_destroy(void){if(root)lv_obj_delete(root);root=NULL;ready=false;}
+void dashboard_layout_destroy(void){
+    if(curve_timer)lv_timer_delete(curve_timer);curve_timer=NULL;
+    if(root)lv_obj_delete(root);root=NULL;curve=NULL;ready=false;history_count=history_head=0;history_valid=false;
+}
