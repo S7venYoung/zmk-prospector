@@ -1,5 +1,7 @@
 # kblade ms2 九主题扫描仪分支
 
+**使用与接入：[GUIDE.md](GUIDE.md) · [其他 ZMK 键盘引用 Dongle](docs/OTHER_KEYBOARD_DONGLE.md) · [主题引用](GUIDE.md#主题引用)**
+
 ## 仓库内硬件定义
 
 kblade board 和 ms2 配套模块已固定在 [hardware/prospector-zmk-module/](hardware/prospector-zmk-module/)。
