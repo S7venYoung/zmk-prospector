@@ -7,7 +7,7 @@ root=pathlib.Path(__file__).resolve().parents[2]
 lvgl, module, out=map(lambda s:pathlib.Path(s).resolve(),sys.argv[1:])
 out.mkdir(parents=True,exist_ok=True)
 shared=module/'boards/shields/src'
-flags=['-std=c99','-O0','-g','-DLV_CONF_SKIP','-DLV_COLOR_DEPTH=24',
+flags=['-include','stdlib.h','-DLV_USE_LOG=1','-DLV_LOG_PRINTF=1','-DLV_LOG_LEVEL=2','-DLV_ASSERT_HANDLER=abort();','-std=c99','-O0','-g','-DLV_CONF_SKIP','-DLV_COLOR_DEPTH=24',
        '-DCONFIG_ZMK_PROSPECTOR_DYA_SETTINGS=0','-DCONFIG_ZMK_LOG_LEVEL=1','-DCONFIG_PROSPECTOR_DEFAULT_LAYOUT=2',
        '-I'+str(lvgl),'-I'+str(root/'tests/ms2_host/stubs'),
        '-I'+str(root/'themes/scanner-original/src'),'-I'+str(shared)]
@@ -29,4 +29,4 @@ def compile_one(item):
 with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
     objects=list(pool.map(compile_one,enumerate(sources)))
 subprocess.run(['clang',*objects,'-lm','-o',str(out/'check-layouts')],check=True)
-subprocess.run([str(out/'check-layouts'),str(out)],check=True)
+subprocess.run([str(out/'check-layouts'),str(out)],check=True,timeout=30)

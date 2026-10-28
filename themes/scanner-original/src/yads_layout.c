@@ -20,7 +20,7 @@ static void plain(lv_obj_t *o) {
     lv_obj_remove_flag(o,LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_CLICKABLE);
 }
 static lv_obj_t *label(lv_obj_t *p,int x,int y,int width,const lv_font_t *font) {
-    lv_obj_t *o=lv_label_create(p);lv_obj_set_style_text_color(o,YADS_FOREGROUND,0);
+    lv_obj_t *o=lv_label_create(p);lv_label_set_text(o,"");lv_obj_set_style_text_color(o,YADS_FOREGROUND,0);
     lv_obj_set_style_text_font(o,font,0);lv_obj_set_style_text_align(o,LV_TEXT_ALIGN_CENTER,0);
     lv_obj_set_pos(o,x,y);lv_obj_set_width(o,width);lv_label_set_long_mode(o,LV_LABEL_LONG_DOT);
     return o;
@@ -34,7 +34,10 @@ lv_obj_t *yads_layout_create(lv_obj_t *parent) {
     root=lv_obj_create(parent);plain(root);lv_obj_set_size(root,280,240);
     wpm=label(root,18,18,112,&FG_Medium_20);
     output=label(root,150,18,112,&FG_Medium_20);
+    lv_obj_set_style_text_align(wpm,LV_TEXT_ALIGN_LEFT,0);
+    lv_obj_set_style_text_align(output,LV_TEXT_ALIGN_RIGHT,0);
     typed=label(root,18,86,244,&FR_Regular_36);
+    lv_obj_set_height(typed,FR_Regular_36.line_height);
     mods=lv_obj_create(root);plain(mods);lv_obj_set_pos(mods,32,135);lv_obj_set_size(mods,216,40);
     for(int i=0;i<2;i++) {
         int x=i?168:18;
@@ -50,7 +53,8 @@ lv_obj_t *yads_layout_create(lv_obj_t *parent) {
     return root;
 }
 void yads_layout_update(const struct prospector_keyboard_data *data) {
-    if(!root||!data)return;state=*data;
+    if (!root || !data) return;
+    state = *data;
     lv_label_set_text_fmt(wpm,"%u WPM",state.wpm_value);
     if(state.usb_connected)lv_label_set_text(output,"USB");
     else lv_label_set_text_fmt(output,state.ble_connected?"BLE %u":"BLE %u X",state.profile_slot+1);
@@ -60,7 +64,7 @@ void yads_layout_update(const struct prospector_keyboard_data *data) {
     const char *symbols[]={SYMBOL_COMMAND,SYMBOL_OPTION,SYMBOL_CONTROL,SYMBOL_SHIFT};
     if (!modifiers_ready || previous_modifiers != state.modifier_flags) {
     lv_obj_clean(mods);int count=0;for(int i=0;i<4;i++)if(state.modifier_flags&masks[i])count++;
-    int pos=(216-count*44)/2;
+    int pos=(216-(count ? count*44-4 : 0))/2;
     for(int i=0;i<4;i++)if(state.modifier_flags&masks[i]) {
         lv_obj_t *symbol=label(mods,pos,0,40,&Symbols_Semibold_32);lv_label_set_text(symbol,symbols[i]);
         lv_obj_t *line=lv_obj_create(mods);plain(line);lv_obj_set_style_bg_color(line,YADS_FOREGROUND,0);

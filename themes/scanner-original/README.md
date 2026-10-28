@@ -72,8 +72,10 @@ clang -std=c99 -Wall -Wextra -Werror -I themes/scanner-original/src \
 
 The render test checks the conservative R43 px corner envelope with a further
 2 px margin. Actual label, arc, image and bar rectangles are inspected after
-LVGL layout, including long names, all modifiers, missing hand data, and layer 9.
-It covers 4 themes x 4 palettes x 4 states (YADS stays monochrome), plus repeated
+LVGL layout, including full-length DYA names, all modifier combinations, 1%/100%
+batteries, missing hand data, and layer 9. Label rectangles are additionally checked
+against every clipping ancestor and against other labels.
+It covers 4 themes x 4 palettes x 6 states (YADS stays monochrome), plus repeated
 next/previous switching and a mocked DYA event/setting contract. It emits PPMs.
 The mock does not stand in for a Zephyr, serial-RPC, NVS or physical test.
 
@@ -83,3 +85,20 @@ The attached reference firmware was read only:
 It contains nRF52840 family `0xADA52840`, Zephyr 4.1.0, ST7789V and
 DongleProspector strings, and UF2 application data beginning at 0x1000. It was
 not modified, flashed, or treated as a substitute for editable source.
+
+## Font/layout corrections
+
+- OPERATOR's FG Medium 20 font has a 25 px line box. Its former 24 px row clipped
+  the bottom pixel; the row is now 26 px. Battery number boxes are 32x25 so three
+  DINish digits (100) fit without cropping.
+- Layer labels have explicit one-line heights derived from each actual font.
+  LV_LABEL_LONG_DOT alone does not prevent an auto-height label from wrapping.
+- FIELD's output row clears the full layer line box, its modifier glyphs use a
+  common centered column, and animated segments avoid measured foreground text.
+- RADII uses equal-width centered modifier cells and an explicitly aligned
+  canvas backing buffer. Long layer names stay on one line.
+- YADS aligns the top status to the safe left/right edges and centers the visible
+  modifier group including its underline width. Labels start empty, so a symbol
+  font is never temporarily asked to draw LVGL's default "Text" string.
+- FIELD/OPERATOR caches retain up to 31 bytes of the live DYA layer name across
+  palette changes instead of silently reverting to a seven-byte cached name.

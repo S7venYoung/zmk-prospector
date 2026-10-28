@@ -248,7 +248,7 @@ static struct {
 /* Cached state for change detection (must be before create functions) */
 static struct {
     uint8_t active_layer;
-    char layer_name[8];
+    char layer_name[32];
     uint8_t battery_level;
     bool battery_connected;
     uint8_t peripheral_battery[OPERATOR_MAX_PERIPHERALS];
@@ -283,7 +283,7 @@ static void create_modifier_indicator(lv_obj_t *parent) {
     const operator_color_palette_t *p = &color_palettes[current_palette];
 
     modifier_widgets.container = lv_obj_create(parent);
-    lv_obj_set_size(modifier_widgets.container, 230, 24);  /* Original: 230x24 */
+    lv_obj_set_size(modifier_widgets.container, 230, 26);  /* Original: 230x24 */
     lv_obj_set_pos(modifier_widgets.container, 25, 16);     /* Original: x=25, y=8 */
     lv_obj_set_style_bg_opa(modifier_widgets.container, LV_OPA_TRANSP, LV_PART_MAIN);
     lv_obj_set_style_border_width(modifier_widgets.container, 0, LV_PART_MAIN);
@@ -384,6 +384,7 @@ static void create_wpm_meter(lv_obj_t *parent) {
     /* Layer label (shown over WPM bars) */
     wpm_widgets.layer_label = lv_label_create(wpm_widgets.container);
     lv_obj_set_width(wpm_widgets.layer_label, 192);
+    lv_obj_set_height(wpm_widgets.layer_label, DINishExpanded_Light_36.line_height + 10);
     lv_label_set_long_mode(wpm_widgets.layer_label, LV_LABEL_LONG_DOT);
     lv_label_set_text(wpm_widgets.layer_label, "");
     lv_obj_set_style_text_font(wpm_widgets.layer_label, &DINishExpanded_Light_36, LV_PART_MAIN);
@@ -546,7 +547,7 @@ static void create_battery_circles(lv_obj_t *parent) {
 
     /* Central label box */
     battery_widgets.central_label_box = lv_obj_create(battery_widgets.central_arc);
-    lv_obj_set_size(battery_widgets.central_label_box, 25, 25);
+    lv_obj_set_size(battery_widgets.central_label_box, 32, 25);
     lv_obj_set_pos(battery_widgets.central_label_box, 0, 0);
     lv_obj_set_style_bg_opa(battery_widgets.central_label_box, LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_set_style_bg_color(battery_widgets.central_label_box,
@@ -582,7 +583,7 @@ static void create_battery_circles(lv_obj_t *parent) {
 
     /* Peripheral label box */
     battery_widgets.peripheral_label_box = lv_obj_create(battery_widgets.peripheral_arc);
-    lv_obj_set_size(battery_widgets.peripheral_label_box, 25, 25);
+    lv_obj_set_size(battery_widgets.peripheral_label_box, 32, 25);
     lv_obj_set_pos(battery_widgets.peripheral_label_box, 0, 0);
     lv_obj_set_style_bg_opa(battery_widgets.peripheral_label_box, LV_OPA_COVER, LV_PART_MAIN);
     lv_obj_set_style_bg_color(battery_widgets.peripheral_label_box,
@@ -1381,7 +1382,7 @@ static void apply_palette(void) {
     uint8_t saved_ble_profile = cached_state.ble_profile;
     bool saved_ble_connected = cached_state.ble_connected;
     bool saved_ble_bonded = cached_state.ble_bonded;
-    char saved_layer_name[8];
+    char saved_layer_name[32];
     strncpy(saved_layer_name, cached_state.layer_name, sizeof(saved_layer_name));
 
     /* Force cache invalidation */

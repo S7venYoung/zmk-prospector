@@ -125,7 +125,8 @@ static lv_obj_t *bat_arc_left = NULL;
 static lv_obj_t *bat_arc_right = NULL;
 
 /* Canvas buffer for wheel */
-static uint8_t wheel_canvas_buf[LV_CANVAS_BUF_SIZE(WHEEL_SIZE, WHEEL_SIZE, 32, 1)];
+static uint8_t wheel_canvas_buf[LV_CANVAS_BUF_SIZE(WHEEL_SIZE, WHEEL_SIZE, 32, 1)]
+    __attribute__((aligned(LV_DRAW_BUF_ALIGN)));
 
 /* ========== Wheel Drawing ========== */
 
@@ -230,6 +231,7 @@ static void create_left_panel(lv_obj_t *parent) {
     lv_obj_set_style_text_font(layer_label, &DINishExpanded_Light_36, LV_PART_MAIN);
     lv_obj_set_style_text_color(layer_label, lv_color_hex(p->layer_text), LV_PART_MAIN);
     lv_obj_set_width(layer_label, 138);
+    lv_obj_set_height(layer_label, DINishExpanded_Light_36.line_height);
     lv_label_set_long_mode(layer_label, LV_LABEL_LONG_DOT);
     lv_label_set_text(layer_label, "BASE");
 
@@ -254,8 +256,8 @@ static void create_modifier_panel(lv_obj_t *parent) {
     /* 2x2 grid of modifier symbols - Mac style (⌘, ⌥, ⌃, ⇧) */
     /* Adjusted positions for symbol font centering */
     static const int32_t mod_positions[4][2] = {
-        {18, 24}, {56, 24},   /* Row 1: CMD, OPT */
-        {18, 62}, {56, 62}    /* Row 2: CTRL, SHIFT */
+        {12, 24}, {56, 24},   /* Row 1: CMD, OPT */
+        {12, 62}, {56, 62}    /* Row 2: CTRL, SHIFT */
     };
     /* Order: CMD (GUI), OPT (ALT), CTRL, SHIFT */
     static const char *mod_symbols[] = {
@@ -271,6 +273,8 @@ static void create_modifier_panel(lv_obj_t *parent) {
         lv_obj_set_style_text_font(mod_labels[i], &Symbols_Semibold_32, LV_PART_MAIN);
         lv_obj_set_style_text_color(mod_labels[i], lv_color_hex(p->mod_inactive), LV_PART_MAIN);
         lv_obj_set_pos(mod_labels[i], mod_positions[i][0], mod_positions[i][1]);
+        lv_obj_set_width(mod_labels[i], 40);
+        lv_obj_set_style_text_align(mod_labels[i], LV_TEXT_ALIGN_CENTER, 0);
     }
 }
 

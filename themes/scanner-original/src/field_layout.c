@@ -235,7 +235,7 @@ static char fl_stbuf_layer[16] = "BASE";
 /* Cached state */
 static struct {
     uint8_t active_layer;
-    char layer_name[8];
+    char layer_name[32];
     uint8_t wpm;
     uint8_t modifier_flags;
     uint8_t battery_level;
@@ -394,12 +394,40 @@ static void lines_update(void) {
 
 /* ========== Draw Callback (from carrefinho) ========== */
 
+/* The animated field must never draw through foreground glyphs. The original
+ * fixed cell mask only covered a short BASE label and the former icon column. */
+static uint8_t foreground_zones(lv_area_t zones[7]) {
+    lv_obj_t *labels[] = {layer_label, output_label, battery_label,
+        mod_labels[0], mod_labels[1], mod_labels[2], mod_labels[3]};
+    uint8_t count = 0;
+    for (int i = 0; i < 7; i++) {
+        lv_obj_t *label = labels[i];
+        if (!label || !lv_label_get_text(label)[0]) continue;
+        lv_area_t area; lv_obj_get_coords(label, &area);
+        lv_point_t size;
+        lv_text_get_size(&size, lv_label_get_text(label),
+            lv_obj_get_style_text_font(label, 0),
+            lv_obj_get_style_text_letter_space(label, 0),
+            lv_obj_get_style_text_line_space(label, 0), LV_COORD_MAX, LV_TEXT_FLAG_NONE);
+        int width = MIN(size.x, lv_area_get_width(&area));
+        lv_text_align_t align = lv_obj_get_style_text_align(label, 0);
+        if (align == LV_TEXT_ALIGN_CENTER) area.x1 += (lv_area_get_width(&area) - width) / 2;
+        else if (align == LV_TEXT_ALIGN_RIGHT) area.x1 = area.x2 - width + 1;
+        area.x2 = area.x1 + width - 1;
+        area.x1 -= 4; area.x2 += 4; area.y1 -= 3; area.y2 += 3;
+        zones[count++] = area;
+    }
+    return count;
+}
+
 static void draw_cb(lv_event_t *e) {
     lv_obj_t *obj = lv_event_get_target(e);
     lv_layer_t *layer = lv_event_get_layer(e);
     lv_area_t coords;
     lv_obj_get_coords(obj, &coords);
 
+    lv_area_t zones[7];
+    uint8_t zone_count = foreground_zones(zones);
     int obj_x1 = coords.x1;
     int obj_y1 = coords.y1;
 
@@ -434,7 +462,16 @@ static void draw_cb(lv_event_t *e) {
             line_dsc.p2.x = obj_x1 + cx + dx;
             line_dsc.p2.y = obj_y1 + cy + dy;
 
-            lv_draw_line(layer, &line_dsc);
+            bool covered = false;
+            for (uint8_t z = 0; z < zone_count; z++) {
+                if (MAX(line_dsc.p1.x, line_dsc.p2.x) >= zones[z].x1 &&
+                    MIN(line_dsc.p1.x, line_dsc.p2.x) <= zones[z].x2 &&
+                    MAX(line_dsc.p1.y, line_dsc.p2.y) >= zones[z].y1 &&
+                    MIN(line_dsc.p1.y, line_dsc.p2.y) <= zones[z].y2) {
+                    covered = true; break;
+                }
+            }
+            if (!covered) lv_draw_line(layer, &line_dsc);
         }
     }
 }
@@ -481,6 +518,7 @@ static void create_labels(lv_obj_t *parent) {
     lv_obj_set_style_text_color(layer_label, lv_color_hex(p->layer_text), LV_PART_MAIN);
     lv_obj_set_pos(layer_label, 18, 18);
     lv_obj_set_width(layer_label, 210);
+    lv_obj_set_height(layer_label, FR_Regular_36.line_height);
     lv_label_set_long_mode(layer_label, LV_LABEL_LONG_DOT);
     lv_label_set_text(layer_label, "BASE");
 
@@ -488,8 +526,9 @@ static void create_labels(lv_obj_t *parent) {
     output_label = lv_label_create(parent);
     lv_obj_set_style_text_font(output_label, &FG_Medium_26, LV_PART_MAIN);
     lv_obj_set_style_text_color(output_label, lv_color_hex(p->output_inactive), LV_PART_MAIN);
-    lv_obj_set_pos(output_label, 18, 56);
+    lv_obj_set_pos(output_label, 18, 62);
     lv_obj_set_width(output_label, 210);
+    lv_obj_set_height(output_label, FG_Medium_26.line_height);
     lv_label_set_long_mode(output_label, LV_LABEL_LONG_DOT);
     lv_label_set_text(output_label, "");
 
@@ -519,9 +558,12 @@ static void create_modifiers(lv_obj_t *parent) {
         int x = 230; /* keep symbol glyphs inside the R43 lower corner */
         int y = grid_cy[r] - 4;
         mod_labels[i] = lv_label_create(parent);
+        lv_label_set_text(mod_labels[i], "");
         lv_obj_set_style_text_font(mod_labels[i], &Symbols_Semibold_32, LV_PART_MAIN);
         lv_obj_set_style_text_color(mod_labels[i], lv_color_hex(p->mod_inactive), LV_PART_MAIN);
         lv_obj_set_pos(mod_labels[i], x, y);
+        lv_obj_set_width(mod_labels[i], 40);
+        lv_obj_set_style_text_align(mod_labels[i], LV_TEXT_ALIGN_CENTER, 0);
         lv_label_set_text(mod_labels[i], mod_symbols[i]);
     }
 }
