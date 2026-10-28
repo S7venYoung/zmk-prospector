@@ -51,3 +51,4 @@ jobs:
             build-ms2-dya/zephyr/zmk.elf
             build-ms2-dya/zephyr/.config
           if-no-files-found: error
+          include-hidden-files: true
