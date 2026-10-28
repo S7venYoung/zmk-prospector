@@ -9,11 +9,38 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: zmk-prospector
+      - name: Initialize west manifest
+        run: west init -l zmk-prospector
+      - uses: actions/cache/restore@v4
+        id: deps
+        with:
+          path: |
+            zmk
+            zephyr
+            modules
+            prospector-zmk-module
+            zmk-feature-*
+            zmk-module-*
+            zmk-behavior-*
+            zmk-stdlib
+          key: ms2-dya-v1-${{ runner.os }}-${{ hashFiles('zmk-prospector/west.yml') }}
       - name: Initialize pinned DYA workspace
         run: |
-          west init -l zmk-prospector
-          west update
+          west update --narrow --fetch-opt=--depth=1
           west zephyr-export
+      - uses: actions/cache/save@v4
+        if: steps.deps.outputs.cache-hit != 'true'
+        with:
+          path: |
+            zmk
+            zephyr
+            modules
+            prospector-zmk-module
+            zmk-feature-*
+            zmk-module-*
+            zmk-behavior-*
+            zmk-stdlib
+          key: ms2-dya-v1-${{ runner.os }}-${{ hashFiles('zmk-prospector/west.yml') }}
       - name: Build kblade ms2 with DYA and four runtime themes
         run: bash zmk-prospector/scripts/build-ms2-dya.sh "$GITHUB_WORKSPACE"
       - uses: actions/upload-artifact@v4

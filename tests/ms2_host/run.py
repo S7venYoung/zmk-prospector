@@ -15,9 +15,14 @@ sources=list((lvgl/'src').rglob('*.c'))
 sources += [p for p in (root/'themes/scanner-original/src').glob('*.c') if p.name not in {'yads_input.c', 'dya_settings.c', 'dya_battery_bridge.c'}]
 sources+=list((shared/'fonts_carrefinho').glob('*.c'))
 sources += [root/'tests/ms2_host/harness.c', root/'tests/ms2_host/dya_contract.c']
+headers = list((root/'themes/scanner-original/src').glob('*.h'))
+headers += list((root/'tests/ms2_host/stubs').rglob('*.h'))
+headers += list((lvgl/'src').rglob('*.h'))
+headers += list(shared.glob('*.h'))
+dependency_mtime = max([Path.stat().st_mtime for Path in headers] + [pathlib.Path(__file__).stat().st_mtime])
 def compile_one(item):
     i,src=item; import hashlib; obj=out/(hashlib.sha1(str(src).encode()).hexdigest()+'.o')
-    if not obj.exists() or obj.stat().st_mtime<src.stat().st_mtime:
+    if not obj.exists() or obj.stat().st_mtime < max(src.stat().st_mtime, dependency_mtime):
         proc=subprocess.run(['clang',*flags,'-c',str(src),'-o',str(obj)],capture_output=True,text=True)
         if proc.returncode:raise RuntimeError(str(src)+'\n'+proc.stderr)
     return str(obj)

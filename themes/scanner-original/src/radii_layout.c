@@ -12,7 +12,7 @@
 
 #include "radii_layout.h"
 #include "fonts_carrefinho.h"
-#include "display_settings.h"
+#include "original_layout_settings.h"
 #include <zephyr/logging/log.h>
 #include <math.h>
 #include <string.h>
@@ -437,7 +437,7 @@ void radii_layout_update(uint8_t active_layer, const char *layer_name,
     if (!layout_created) return;
 
     /* Layer count from config */
-    uint8_t layer_count = display_settings_get_max_layers();
+    uint8_t layer_count = original_layout_layer_count();
     if (layer_count < 1) layer_count = 1;
     if (layer_count > 10) layer_count = 10;
 

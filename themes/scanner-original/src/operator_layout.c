@@ -8,7 +8,7 @@
  */
 
 #include "operator_layout.h"
-#include "display_settings.h"
+#include "original_layout_settings.h"
 #include "fonts_carrefinho.h"
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -451,7 +451,7 @@ static void create_layer_display(lv_obj_t *parent) {
 
 static void update_layer_display(uint8_t active_layer) {
     /* Get current max layers from display settings */
-    int layer_count = display_settings_get_max_layers();
+    int layer_count = original_layout_layer_count();
     if (layer_count > LAYER_DOT_MAX) layer_count = LAYER_DOT_MAX;
     if (layer_count < 1) layer_count = 1;
 
