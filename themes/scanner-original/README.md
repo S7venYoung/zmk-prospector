@@ -20,7 +20,7 @@ The YADS portable input model and information hierarchy are adapted from
 The original module manager had the three renderer calls commented out. This
 module excludes that manager on the app target and supplies its own, retaining
 ms2's existing custom-screen host, log-page host hooks, and numeric layout IDs.
-The four IDs are 1=FIELD, 2=OPERATOR, 3=RADII, 4=YADS. ID 4 was YADS2 upstream;
+The IDs are 1=FIELD, 2=OPERATOR, 3=RADII, 4=YADS, 5=INDUSTRIAL. ID 4 was YADS2 upstream;
 this module deliberately supplies the requested OLED-derived YADS in that slot.
 
 For the original kbladewht core without DYA, the optional individual shields
@@ -75,7 +75,7 @@ The render test checks the conservative R43 px corner envelope with a further
 LVGL layout, including full-length DYA names, all modifier combinations, 1%/100%
 batteries, missing hand data, and layer 9. Label rectangles are additionally checked
 against every clipping ancestor and against other labels.
-It covers 4 themes x 4 palettes x 6 states (YADS stays monochrome), plus repeated
+It covers 5 themes x 4 palettes x 6 states (YADS stays monochrome and INDUSTRIAL stays yellow/black), plus repeated
 next/previous switching and a mocked DYA event/setting contract. It emits PPMs.
 The mock does not stand in for a Zephyr, serial-RPC, NVS or physical test.
 
@@ -102,3 +102,40 @@ not modified, flashed, or treated as a substitute for editable source.
   font is never temporarily asked to draw LVGL's default "Text" string.
 - FIELD/OPERATOR caches retain up to 31 bytes of the live DYA layer name across
   palette changes instead of silently reverting to a seven-byte cached name.
+
+## INDUSTRIAL reference design
+
+The fifth renderer is a native-LVGL interpretation of the user-supplied robot-eye
+industrial dashboard. The supplied portrait composition is rearranged into the
+existing 280x240 landscape viewport, retaining the R43+2 px foreground envelope.
+The bottom region was explicitly changed to CMD/OPT/CTRL/SHIFT status: corresponding
+left/right HID modifier bits are combined, inactive cells are muted, and held
+cells use yellow backgrounds with black glyphs. Battery cards move up 5 px to
+make room for the original 33 px symbol-font line box.
+
+The renderers use original Impact assets already in this repository,
+with the existing FR Regular 36 as an intermediate long-name size. Background
+hatches use LVGL triangle drawing; no large raster texture or transform buffer
+is allocated. Actual firmware Flash/RAM impact remains to be measured by a
+confirmed build. Host tests cover five-way DYA selection, 50 forward/backward
+switches, rounded geometry, parent clipping, text overlap, 1%/100% batteries,
+long names, and left/right modifier state colours.
+
+DYA value 4 maps to local renderer ID 5. The external ms2 module's enum is not
+modified. Its fixed-default Kconfig range remains unchanged; INDUSTRIAL is
+selected through DYA and persisted by Custom Settings, not a new fixed shield.
+No Actions build is dispatched merely by adding this theme.
+
+The latest INDUSTRIAL revision uses the short CORNE header, 32 px WPM digits
+with a 20 px unit label, and 32 px battery percentages beside 32x24 px battery
+icons. The L/R captions are removed; left/right placement keeps their identity.
+The two battery cards are 120x42 and retain enough room for 100%. Numeric glyphs
+are a 14-character, 2298-byte 4 bpp subset derived reproducibly from the existing
+Impact 56 asset by scripts/make-industrial-fonts.py. No font scaling
+layer is allocated at runtime.
+
+The V3 composition widens the main 56 px display glyphs by 1.70x at generation
+time, uses a 28 px CORNE brand, 30x30 eyes and a 54x30 USB badge. Modifier cells
+are 48 px wide. These generated fonts require no runtime transform framebuffer.
+The native suite passed 120 states and 1199 foreground rectangle checks with
+zero unsafe, clipped or overlapping elements. This is host validation only.

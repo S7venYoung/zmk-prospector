@@ -14,6 +14,7 @@ flags=['-include','stdlib.h','-DLV_USE_LOG=1','-DLV_LOG_PRINTF=1','-DLV_LOG_LEVE
 sources=list((lvgl/'src').rglob('*.c'))
 sources += [p for p in (root/'themes/scanner-original/src').glob('*.c') if p.name not in {'yads_input.c', 'dya_settings.c', 'dya_battery_bridge.c'}]
 sources+=list((shared/'fonts_carrefinho').glob('*.c'))
+sources += [root/f'themes/walle/src/impact_{size}.c' for size in (16,20,56)]
 sources += [root/'tests/ms2_host/harness.c', root/'tests/ms2_host/dya_contract.c']
 headers = list((root/'themes/scanner-original/src').glob('*.h'))
 headers += list((root/'tests/ms2_host/stubs').rglob('*.h'))

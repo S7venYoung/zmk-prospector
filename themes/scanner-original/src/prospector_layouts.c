@@ -7,6 +7,7 @@
 #include "operator_layout.h"
 #include "radii_layout.h"
 #include "yads_layout.h"
+#include "industrial_layout.h"
 #include <string.h>
 #include <zephyr/sys/util.h>
 #include <stdio.h>
@@ -22,23 +23,26 @@ static struct prospector_keyboard_data cached;
 
 static bool supported(prospector_layout_t style) {
     return style == PROSPECTOR_LAYOUT_FIELD || style == PROSPECTOR_LAYOUT_OPERATOR ||
-           style == PROSPECTOR_LAYOUT_RADII || style == PROSPECTOR_LAYOUT_YADS2;
+           style == PROSPECTOR_LAYOUT_RADII || style == PROSPECTOR_LAYOUT_YADS2 ||
+           style == PROSPECTOR_LAYOUT_INDUSTRIAL;
 }
 static void create_layout(void) {
-    switch (current_layout) {
+    switch ((int)current_layout) {
     case PROSPECTOR_LAYOUT_FIELD: field_layout_create(parent_obj); break;
     case PROSPECTOR_LAYOUT_OPERATOR: operator_layout_create(parent_obj); break;
     case PROSPECTOR_LAYOUT_RADII: radii_layout_create(parent_obj); break;
     case PROSPECTOR_LAYOUT_YADS2: yads_layout_create(parent_obj); break;
+    case PROSPECTOR_LAYOUT_INDUSTRIAL: industrial_layout_create(parent_obj); break;
     default: break;
     }
 }
 static void destroy_layout(void) {
-    switch (current_layout) {
+    switch ((int)current_layout) {
     case PROSPECTOR_LAYOUT_FIELD: field_layout_destroy(); break;
     case PROSPECTOR_LAYOUT_OPERATOR: operator_layout_destroy(); break;
     case PROSPECTOR_LAYOUT_RADII: radii_layout_destroy(); break;
     case PROSPECTOR_LAYOUT_YADS2: yads_layout_destroy(); break;
+    case PROSPECTOR_LAYOUT_INDUSTRIAL: industrial_layout_destroy(); break;
     default: break;
     }
 }
@@ -62,7 +66,7 @@ static void paint(void) {
     if (!name[0]) {
         snprintf(name, sizeof(name), "L%u", cached.active_layer);
     }
-    switch (current_layout) {
+    switch ((int)current_layout) {
     case PROSPECTOR_LAYOUT_FIELD:
         field_layout_update(cached.active_layer, name, left, left_valid, right[0],
             right_valid[0], cached.wpm_value, cached.modifier_flags, cached.usb_connected,
@@ -79,6 +83,9 @@ static void paint(void) {
         break;
     case PROSPECTOR_LAYOUT_YADS2:
         yads_layout_update(&cached);
+        break;
+    case PROSPECTOR_LAYOUT_INDUSTRIAL:
+        industrial_layout_update(&cached, name);
         break;
     default: break;
     }
@@ -120,20 +127,16 @@ void prospector_layouts_update(const struct prospector_keyboard_data *data) {
     paint();
 }
 void prospector_layouts_next(void) {
-    prospector_layouts_set_style(current_layout == PROSPECTOR_LAYOUT_FIELD
-        ? PROSPECTOR_LAYOUT_OPERATOR : current_layout == PROSPECTOR_LAYOUT_OPERATOR
-        ? PROSPECTOR_LAYOUT_RADII : current_layout == PROSPECTOR_LAYOUT_RADII
-        ? PROSPECTOR_LAYOUT_YADS2 : PROSPECTOR_LAYOUT_FIELD);
+    prospector_layouts_set_style(current_layout == PROSPECTOR_LAYOUT_INDUSTRIAL
+        ? PROSPECTOR_LAYOUT_FIELD : (prospector_layout_t)(current_layout + 1));
 }
 void prospector_layouts_prev(void) {
     prospector_layouts_set_style(current_layout == PROSPECTOR_LAYOUT_FIELD
-        ? PROSPECTOR_LAYOUT_YADS2 : current_layout == PROSPECTOR_LAYOUT_YADS2
-        ? PROSPECTOR_LAYOUT_RADII : current_layout == PROSPECTOR_LAYOUT_RADII
-        ? PROSPECTOR_LAYOUT_OPERATOR : PROSPECTOR_LAYOUT_FIELD);
+        ? PROSPECTOR_LAYOUT_INDUSTRIAL : (prospector_layout_t)(current_layout - 1));
 }
 void prospector_layouts_cycle_palette(void) {
     if (!initialized) return;
-    switch (current_layout) {
+    switch ((int)current_layout) {
     case PROSPECTOR_LAYOUT_FIELD: field_layout_cycle_palette(); break;
     case PROSPECTOR_LAYOUT_OPERATOR: operator_layout_cycle_palette(); break;
     case PROSPECTOR_LAYOUT_RADII: radii_layout_cycle_palette(); break;
@@ -141,11 +144,12 @@ void prospector_layouts_cycle_palette(void) {
     }
 }
 const char *prospector_layouts_get_name(prospector_layout_t style) {
-    switch (style) {
+    switch ((int)style) {
     case PROSPECTOR_LAYOUT_FIELD: return "Field";
     case PROSPECTOR_LAYOUT_OPERATOR: return "Operator";
     case PROSPECTOR_LAYOUT_RADII: return "Radii";
     case PROSPECTOR_LAYOUT_YADS2: return "YADS";
+    case PROSPECTOR_LAYOUT_INDUSTRIAL: return "Industrial";
     default: return "Classic";
     }
 }

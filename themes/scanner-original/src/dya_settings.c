@@ -29,7 +29,7 @@ ZMK_RPC_CUSTOM_SUBSYSTEM(dongle_display_settings, &display_meta, unused_rpc);
         ZMK_CUSTOM_SETTING_VALUE_INT32(initial), ZMK_CUSTOM_SETTING_CONFIDENTIALITY_RPC_PUBLIC, \
         ZMK_CUSTOM_SETTING_PERMISSION_UNSECURE, ZMK_CUSTOM_SETTING_PERMISSION_SECURE, \
         ZMK_CUSTOM_SETTING_RANGE_INT32(lo, hi))
-DISPLAY_SETTING(display_theme, 0, 0, 3);
+DISPLAY_SETTING(display_theme, 0, 0, 4);
 DISPLAY_SETTING(display_palette, 0, 0, 3);
 DISPLAY_SETTING(display_brightness, 60, 1, 100);
 DISPLAY_SETTING(left_hand_slot, 0, 0, 1);
@@ -47,11 +47,11 @@ static void apply(lv_timer_t *timer) {
     int32_t theme = read_value(&display_theme, 0);
     int32_t palette = read_value(&display_palette, 0);
     int32_t brightness = read_value(&display_brightness, 60);
-    if (theme < 0 || theme > 3 || palette < 0 || palette > 3) return;
+    if (theme < 0 || theme > 4 || palette < 0 || palette > 3) return;
     prospector_layouts_set_style((prospector_layout_t)(theme + 1));
     uint8_t current = theme == 0 ? field_layout_get_palette() : theme == 1
         ? operator_layout_get_palette() : theme == 2 ? radii_layout_get_palette() : 0;
-    if (theme != 3) for (int i = 0; i < ((palette - current + 4) % 4); i++)
+    if (theme < 3) for (int i = 0; i < ((palette - current + 4) % 4); i++)
         prospector_layouts_cycle_palette();
 #if DT_HAS_COMPAT_STATUS_OKAY(pwm_leds)
     const struct device *backlight = DEVICE_DT_GET(DT_COMPAT_GET_ANY_STATUS_OKAY(pwm_leds));

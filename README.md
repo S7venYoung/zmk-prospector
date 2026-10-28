@@ -25,8 +25,8 @@ Runtime Sensor Rotate 预定义音量和滚动行为，未虚构物理 sensor。
 
 | 设置 | 值与用途 |
 | --- | --- |
-| `display_theme` | `0` FIELD、`1` OPERATOR、`2` RADII、`3` YADS |
-| `display_palette` | `0`–`3`：前三个原版主题的四套配色；YADS 固定黑底白字 |
+| `display_theme` | `0` FIELD、`1` OPERATOR、`2` RADII、`3` YADS、`4` INDUSTRIAL |
+| `display_palette` | `0`–`3`：前三个原版主题的四套配色；YADS 固定黑底白字，INDUSTRIAL 固定黄黑配色 |
 | `display_brightness` | `1`–`100`：背光亮度，沿用 ms2 电路的 PWM 反向逻辑 |
 | `left_hand_slot` | `0` / `1`：哪一个 split source 是左手，默认 `0` |
 | `right_hand_slot` | `0` / `1`：哪一个 split source 是右手，默认 `1` |
@@ -57,6 +57,19 @@ FIELD 的文字和右侧修饰键、OPERATOR 的上下信息组、RADII 的层�
 
 [字体与布局边界状态检查图](docs/ms2-font-layout-validation.png)
 
+## 新增 INDUSTRIAL 工业风主题
+
+参考提供的机器人眼睛与黄黑警示纹设计，重新排成 280×240 横屏：金黄顶栏、
+机器人眼睛、真实 USB/BLE 输出状态、大层名、32 px WPM 数字及旁置电池电量。
+标题仅显示 CORNE；左右电池图标旁使用 32 px 粗体电量，移除 L/R 文字。
+底栏为 `⌘ / ⌥ / ⌃ / ⇧` 修饰键状态，左右同类修饰键合并显示；未按下为暗灰，
+按下为黄底黑图标。长层名依次选用大、中、小字号，并保持单行。
+
+DYA `display_theme=4` 选择新主题，原有 0–3 的含义保持不变。
+该新增主题已完成真实 LVGL 主机渲染和状态检查，固件构建需单独确认后执行。
+
+![INDUSTRIAL 主机预览](docs/industrial-modifiers-preview.png)
+
 ## 构建
 
 依赖与版本在根目录 `west.yml` 固定。需安装 west、Zephyr SDK，并准备一个
@@ -85,8 +98,8 @@ GitHub Actions 工作流只接受 **workflow_dispatch**，提交和 PR 不会触
 
 ## 已完成的检查与边界
 
-- 编译并运行真实 LVGL 与四个渲染器：96 种主题/配色/状态组合，935 个前景边界，
-  圆角越界、父容器裁切、文字框重叠均为 0；另有 40 次前后循环切换的断言检查。
+- 编译并运行真实 LVGL 与四个渲染器：120 种主题/配色/状态组合，1199 个前景边界，
+  圆角越界、父容器裁切、文字框重叠均为 0；另有 50 次前后循环切换的断言检查。
   覆盖长层名、1%/100% 电量、全部修饰键组合，并检查切换配色后层名保持完整。
 - 主机模拟 DYA 设置事件：四主题选择、延后到显示线程应用、三主题配色、
   非法主题拒绝、左右手 slot 交换。

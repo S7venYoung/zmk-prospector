@@ -1,5 +1,5 @@
 config ZMK_PROSPECTOR_SCANNER_ORIGINAL
-    bool "Scanner FIELD / OPERATOR / RADII on the ms2 dongle"
+    bool "FIELD / OPERATOR / RADII / YADS / INDUSTRIAL on ms2"
     depends on $(shields_list_contains,prospector_ms2) && ZMK_DISPLAY
     help
       Restore the original scanner renderers on kblade ms2 using its existing
