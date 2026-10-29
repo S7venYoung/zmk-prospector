@@ -3,6 +3,8 @@
 独立分支：`codex/kblade-scanner-nine-themes`。
 基于 Dongle 主题提交 `83bc9c3`，保留原 `codex/kblade-dya-four-themes` 分支。
 
+其他键盘如何加入扫描仪，见 [GUIDE：其他键盘接入 Scanner](../GUIDE.md#其他键盘接入-scanner)。
+
 ## 硬件与数据来源
 
 - Board：`kblade//zmk`，显示 Shield：`prospector_ms2`，屏幕 280×240，R43+2 前景安全区。

@@ -113,6 +113,79 @@ USB/蓝牙图标代表发送键盘的输出状态，不代表扫描仪的 USB �
 `CONFIG_PROSPECTOR_SCANNER_TIMEOUT_MS=480000`（8 分钟）。它应大于发送器的空闲广播间隔。
 切换发送器或超时后清空旧的 MONO 曲线；无有效数据时显示 WAIT 和未知电量。
 
+## 其他键盘接入 Scanner
+
+Scanner 不要求将键盘改成 Dongle 三件套。键盘继续连接原来的电脑/接收器，
+由**主手、独立键盘或现有 Dongle**额外发送兼容的状态广播；Scanner 只接收和显示。
+普通蓝牙 HID 广告不包含完整层、WPM、修饰键与电量信息，不能直接替代状态广播。
+
+### 1. 在键盘发送端加入广播模块
+
+在键盘工程中引入与其 ZMK/Zephyr 版本兼容、且确实包含发送实现的 Prospector
+状态广播模块。典型功能开关是：
+
+```conf
+CONFIG_ZMK_STATUS_ADVERTISEMENT=y
+```
+
+只有配置开关不够：发送源码必须实际参与编译、完成初始化，并在键盘状态变化时
+更新广播。具体 west 模块版本及附加配置应以发送模块为准，不能混用不同 ZMK 版本。
+本分支本地 `hardware/prospector-zmk-module/` 的发送入口已被注释，且不含
+`src/status_advertisement.c`；它用于接收器硬件，**不能作为现成发送端模块直接引用**。
+
+通常只在键盘主手或现有 Dongle 上开启广播；左右手同时广播可能占用不同接收槽位。
+保留原 keymap、主机输出与绑定，不需要为了接入 Scanner 默认清配对。
+
+### 2. 核对发送协议与数据
+
+本分支接收 [scanner/include/zmk/status_advertisement.h](scanner/include/zmk/status_advertisement.h)
+定义的 26 字节 Manufacturer Data：
+
+| 内容 | 要求 |
+| --- | --- |
+| Company ID | 字节 `FF FF` |
+| 协议签名 | 字节 `AB CD` |
+| 键盘标识 | 稳定的 `keyboard_id`、角色及设备标识 |
+| 层 | `active_layer` 与 4 字节 `layer_name` |
+| 输入状态 | HID 修饰键位图、`wpm_value` |
+| 电量 | `battery_level`、`peripheral_battery[]` |
+| 输出状态 | USB HID ready、BLE connected/bonded 等状态位 |
+| 频道 | `channel` |
+
+字段布局、长度和位定义必须匹配，不能只复用 Company ID。WPM 和副手电量还需发送端
+具有相应数据源；Scanner 不会凭空计算远端按键速度或伪造电量。
+广播没有逐键字符，因此 YADS 只显示广播层名，不显示字母输入历史。
+
+### 3. 匹配频道并选择键盘
+
+先确认键盘实际发出了兼容广播，再在 Scanner 中核对频道。当前接收代码规则是：
+
+- Scanner 频道为 `0` 或 `>=10` 时接收所有频道。
+- 发送端频道为 `0` 时可被任意 Scanner 频道接收。
+- 其他情况，双方频道必须相同。
+
+这些是本分支协议规则，不应套用于其他广播模块。
+Scanner 运行时频道沿用 ms2 的保存设置；`CONFIG_PROSPECTOR_SCANNER_CHANNEL`
+是没有运行时频道接口时的回退值，修改它不一定覆盖已保存设置。
+
+收到广播后，用 USB 将 Scanner 接入 DYA Studio，在
+`dongle_display_settings → scanner_keyboard` 选择 `0–2` 槽位。
+槽位由接收器发现设备的顺序形成，不是左右手编号。
+若主手电量对应的左右方向不同，使用 `left_hand_slot/right_hand_slot` 交换。
+全部九个主题共用这份状态，无须为每个键盘逐一修改主题。
+
+### 4. 分别构建并验收
+
+发送端需要按自己的键盘工程重新编译；Scanner 按本指南构建。
+两端主控、引脚、分区和功能不同，不刷同一个 UF2。
+
+核对顺序：键盘原有输入正常 → 广播被发现 → 选中正确槽位 → 层/修饰键/WPM 正确 →
+电量来源正确 → USB/BLE 图标反映键盘输出 → 主题切换与 MONO 曲线正常。
+断开发送器后，需等待配置的接收超时再判定掉线；超时要大于键盘空闲广播间隔。
+
+本接入说明不是一份适用于所有键盘的发送固件。实际移植需要键盘仓库、分支、主手/
+接收器角色与 ZMK 版本，以确定可用发送模块及构建配置。
+
 ## 主题引用
 
 ### A. 引用完整工程

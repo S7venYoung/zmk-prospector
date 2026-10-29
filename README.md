@@ -1,5 +1,7 @@
 # kblade ms2 九主题扫描仪分支
 
+**[其他键盘接入 Scanner](GUIDE.md#其他键盘接入-scanner)**
+
 **使用与接入：[GUIDE.md](GUIDE.md) · [其他 ZMK 键盘引用 Dongle](docs/OTHER_KEYBOARD_DONGLE.md) · [主题引用](GUIDE.md#主题引用)**
 
 ## 仓库内硬件定义
