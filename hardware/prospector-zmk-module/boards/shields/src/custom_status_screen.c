@@ -248,6 +248,7 @@ static void load_display_settings(void) {
             ds_auto_brightness_enabled, ds_manual_brightness,
             ds_max_layers, ds_layer_slide_mode);
 
+#if !IS_ENABLED(CONFIG_ZMK_PROSPECTOR_DYA_SETTINGS)
     /* Apply saved brightness setting */
     if (ds_auto_brightness_enabled) {
         brightness_control_set_auto(true);
@@ -255,6 +256,7 @@ static void load_display_settings(void) {
     } else {
         set_pwm_brightness(ds_manual_brightness);
     }
+#endif /* DYA owns the backlight when enabled. */
 }
 
 /* Forward declarations for layer display helpers */
@@ -416,7 +418,7 @@ static void pending_update_timer_cb(lv_timer_t *timer) {
             active_battery_count = -1;
 
             /* Apply timeout brightness if configured */
-#ifdef CONFIG_PROSPECTOR_SCANNER_TIMEOUT_BRIGHTNESS
+#if defined(CONFIG_PROSPECTOR_SCANNER_TIMEOUT_BRIGHTNESS) && !IS_ENABLED(CONFIG_ZMK_PROSPECTOR_DYA_SETTINGS)
             if (CONFIG_PROSPECTOR_SCANNER_TIMEOUT_BRIGHTNESS > 0) {
                 set_pwm_brightness(CONFIG_PROSPECTOR_SCANNER_TIMEOUT_BRIGHTNESS);
                 LOG_INF("Timeout brightness set to %d%%", CONFIG_PROSPECTOR_SCANNER_TIMEOUT_BRIGHTNESS);
@@ -434,7 +436,7 @@ static void pending_update_timer_cb(lv_timer_t *timer) {
             active_battery_count = -1;  /* Force reposition on next battery update */
 
             /* Restore normal brightness when keyboard activity resumes */
-#ifdef CONFIG_PROSPECTOR_FIXED_BRIGHTNESS
+#if defined(CONFIG_PROSPECTOR_FIXED_BRIGHTNESS) && !IS_ENABLED(CONFIG_ZMK_PROSPECTOR_DYA_SETTINGS)
             set_pwm_brightness(CONFIG_PROSPECTOR_FIXED_BRIGHTNESS);
             LOG_INF("Brightness restored to %d%%", CONFIG_PROSPECTOR_FIXED_BRIGHTNESS);
 #endif

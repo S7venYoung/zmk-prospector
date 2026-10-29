@@ -288,3 +288,11 @@ CONFIG_ZMK_SETTINGS_RPC_STUDIO=y
 `CONFIG_ZMK_PROSPECTOR_DYA_SETTINGS=y`，两套接口不能互相替代。
 `f37afec` 构建缺少核心 Settings RPC，后续源码已补齐，需重新构建并刷入才能生效。
 本次配置修复不启用 split 或键盘 BLE 角色。
+
+## 启动后背光突然变暗
+
+旧扫描屏幕在没有收到键盘广播时会应用 `PROSPECTOR_SCANNER_TIMEOUT_BRIGHTNESS=1`，
+覆盖 DYA 亮度。后续源码在启用 DYA 显示设置时禁用了这条旧的亮度覆盖，以及键盘
+恢复时的固定亮度覆盖；背光由 `display_brightness` 控制。无需清除 NVS 或配对。
+启动 PWM 与 DYA 默认 60% 对齐，保存过的 DYA 亮度会在设置加载后应用。
+这不修改“无有效键盘广播”的状态判断或接收超时，只改变背光控制归属。

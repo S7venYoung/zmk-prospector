@@ -24,7 +24,12 @@ static const struct device *backlight_dev = DEVICE_DT_GET(BACKLIGHT_NODE);
 #endif
 
 /* Default brightness (0-100) */
+#if IS_ENABLED(CONFIG_ZMK_PROSPECTOR_DYA_SETTINGS)
+/* Same user brightness as DYA's unsaved default; ms2 PWM is inverted. */
+#define DEFAULT_BRIGHTNESS (100 - 60)
+#else
 #define DEFAULT_BRIGHTNESS 65
+#endif
 
 /* The old 3s k_timer "heartbeat" was removed: it called
  * display_get_capabilities() from ISR context every 15s and logged 1200
