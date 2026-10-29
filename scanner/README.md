@@ -20,6 +20,8 @@
 ## 主题与控制
 
 DYA Studio 通过 USB 访问**扫描仪自己的屏幕设置**，不能通过扫描仪改接收键盘的键位。
+核心设置页需要 `CONFIG_ZMK_SETTINGS_RPC=y` 与 `CONFIG_ZMK_SETTINGS_RPC_STUDIO=y`；
+主题设置另由 Custom Settings 提供。`f37afec` 缺少前两项，本次源码已补齐，待重新构建。
 
 | display_theme | 主题 |
 | --- | --- |

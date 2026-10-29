@@ -272,3 +272,19 @@ python3 display-themes/tests/host/run.py /path/to/lvgl \
 `f37afec` 已通过 [Actions 40836266045](https://github.com/S7venYoung/zmk-prospector/actions/runs/40836266045)，
 包含本地 kblade/ms2、全部九个主题、连接图标和 MONO 曲线。Flash 70.61%，RAM 64.27%。
 UF2 校验和观察者角色配置已核对；实机广播接收和 USB DYA 操作仍待验证。
+
+## DYA 提示不支持 Settings RPC
+
+若设备已经显示为已连接，但“设置”页提示不支持 Settings RPC，请核对实际刷入固件的
+`.config`，以下两项必须为 `y`：
+
+```conf
+CONFIG_ZMK_SETTINGS_RPC=y
+CONFIG_ZMK_SETTINGS_RPC_STUDIO=y
+```
+
+这两项提供 DYA 的核心设置接口；主题设置还需要原有的
+`CONFIG_ZMK_CUSTOM_SETTINGS_STUDIO_RPC=y` 与
+`CONFIG_ZMK_PROSPECTOR_DYA_SETTINGS=y`，两套接口不能互相替代。
+`f37afec` 构建缺少核心 Settings RPC，后续源码已补齐，需重新构建并刷入才能生效。
+本次配置修复不启用 split 或键盘 BLE 角色。
