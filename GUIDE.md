@@ -296,3 +296,21 @@ CONFIG_ZMK_SETTINGS_RPC_STUDIO=y
 恢复时的固定亮度覆盖；背光由 `display_brightness` 控制。无需清除 NVS 或配对。
 启动 PWM 与 DYA 默认 60% 对齐，保存过的 DYA 亮度会在设置加载后应用。
 这不修改“无有效键盘广播”的状态判断或接收超时，只改变背光控制归属。
+
+## USB 能识别，但 DYA 握手超时或拔插后才能恢复
+
+当前 kblade 板默认 CDC、Studio RPC CDC 和日志 CDC 一共三个串口。
+Zephyr 4.1 的旧 USB CDC 驱动在配置设备时为每个串口提交一项 OUT 接收和一项
+IN 零长度传输；USB 传输池默认只有 4 项，不能覆盖最坏情况下的 6 项请求。
+本机旧固件日志曾出现 `usb_transfer: No transfer slot available`。提交失败后
+CDC 驱动没有重试，可能留下已枚举但不能收发的串口。
+
+扫描仪配置将 `CONFIG_USB_MAX_NUM_TRANSFERS` 设为 8，并在编译时检查传输池
+至少覆盖所有启用 CDC 的两倍数量。保留原有接口顺序，Studio 和日志仍分别使用
+自己的 CDC。`CONFIG_ZMK_LOG_LEVEL_WRN=y` 显式关闭广播回调的大量 DEBUG 日志；
+仅设置 `CONFIG_LOG_DEFAULT_LEVEL=2` 不能覆盖 USB logging 对 ZMK 日志级别的默认值。
+
+这是基于旧固件配置、USB 驱动和日志定位到的容量缺陷；修复后的反复连接、关闭网页、
+USB 拔插仍须实机验证。若网页提示 `The port is already open`，还需要检查浏览器
+是否仍持有串口；这个浏览器错误本身不等于固件占用了 Mac 的串口句柄。
+无需清除 NVS、配对或刷 settings reset。
