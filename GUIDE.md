@@ -266,3 +266,9 @@ python3 display-themes/tests/host/run.py /path/to/lvgl \
 真实固件是否编译成功，以当前提交对应 Actions 和 `.config` 为准；主机渲染与 dry-run
 不等于 Zephyr 构建。当前图标/曲线、本地硬件迁移需在新固件中验证；不使用旧 UF2
 代替当前源码的验证结果。
+
+## 扫描仪构建记录
+
+`f37afec` 已通过 [Actions 40836266045](https://github.com/S7venYoung/zmk-prospector/actions/runs/40836266045)，
+包含本地 kblade/ms2、全部九个主题、连接图标和 MONO 曲线。Flash 70.61%，RAM 64.27%。
+UF2 校验和观察者角色配置已核对；实机广播接收和 USB DYA 操作仍待验证。

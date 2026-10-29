@@ -78,5 +78,10 @@ python3 display-themes/tests/host/run.py /path/to/lvgl /path/to/kblade-hardware-
 LVGL 测试覆盖 216 组九主题状态与 2752 个前景边界，以及连接图标、修饰键、
 ORBIT 电量弧、MONO 曲线和静止重复刷新检查。
 
-当前仅完成源码和上述主机检查，尚未运行 Zephyr 编译或实机接收测试。
+当前已完成主机检查和 Zephyr 编译：提交 `f37afec`，
+[Actions 40836266045](https://github.com/S7venYoung/zmk-prospector/actions/runs/40836266045) 成功。
+Flash 656496 B（70.61%），RAM 168484 B（64.27%），UF2 文件校验通过。
+配置确认 `BT_OBSERVER=y`，`BT_CONN/BT_CENTRAL/BT_PERIPHERAL/ZMK_SPLIT/ZMK_BLE` 均关闭。
+仅保留一个 `&none` 占位 keymap 供 ZMK/Studio 初始化，不处理实际键盘按键。
+尚未进行实机接收测试。
 广播收发、USB DYA Save/重启恢复、RF 并发和实际功耗仍需构建后验证。
