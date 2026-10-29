@@ -2,7 +2,7 @@
 #include <dt-bindings/zmk/matrix_transform.h>
 #include <physical_layouts.dtsi>
 / {
-    chosen { zmk,kscan = &scanner_kscan; zmk,matrix-transform = &scanner_transform; zmk,physical-layout = &scanner_layout; };
+    chosen { zmk,kscan = &scanner_kscan; zmk,physical-layout = &scanner_layout; };
     scanner_kscan: scanner_kscan { compatible = "zmk,kscan-mock"; rows = <1>; columns = <1>; event-period = <1000>; events = <>; };
     scanner_layout: scanner_layout {
         compatible = "zmk,physical-layout"; display-name = "Scanner display";
