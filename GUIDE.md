@@ -307,7 +307,8 @@ CDC 驱动没有重试，可能留下已枚举但不能收发的串口。
 
 扫描仪配置将 `CONFIG_USB_MAX_NUM_TRANSFERS` 设为 8，并在编译时检查传输池
 至少覆盖所有启用 CDC 的两倍数量。保留原有接口顺序，Studio 和日志仍分别使用
-自己的 CDC。`CONFIG_ZMK_LOG_LEVEL_WRN=y` 显式关闭广播回调的大量 DEBUG 日志；
+自己的 CDC。`CONFIG_ZMK_LOGGING_MINIMAL=y` 取消 ZMK 强制 level 4 的默认值，配合
+`CONFIG_ZMK_LOG_LEVEL_WRN=y` 关闭广播回调的大量 DEBUG 日志；
 仅设置 `CONFIG_LOG_DEFAULT_LEVEL=2` 不能覆盖 USB logging 对 ZMK 日志级别的默认值。
 
 这是基于旧固件配置、USB 驱动和日志定位到的容量缺陷；修复后的反复连接、关闭网页、
