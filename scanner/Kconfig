@@ -6,3 +6,11 @@ config ZMK_PROSPECTOR_BROADCAST_SCANNER
     help
       Remote keyboard advertisements replace local HID state.
       Bluetooth observer only; display settings remain available over USB.
+
+config ZMK_PROSPECTOR_SCANNER_TIMING
+    bool "Log modifier receive-to-view timings"
+    depends on ZMK_PROSPECTOR_BROADCAST_SCANNER
+    help
+      Log only modifier transitions, not nearby device names or every packet.
+      RX queue and display-consumption timings exclude the keyboard-to-radio
+      delay and the final panel flush. Disable after hardware diagnosis.

@@ -62,6 +62,7 @@ static bool mutex_initialized = false;
 struct incoming_adv {
     struct zmk_status_adv_data data;
     int8_t rssi;
+    uint32_t received_ms;
     char name[MAX_NAME_LEN];
     uint8_t ble_addr[6];
     uint8_t ble_addr_type;
@@ -115,6 +116,8 @@ static struct pending_display_data pending_data = {0};
 static int modifier_slot = -1;
 static uint8_t observed_presses, visible_hold, last_visible_modifiers;
 static uint32_t modifier_until[8];
+static uint32_t selected_received_ms;
+static uint32_t slot_received_ms[MAX_KEYBOARDS];
 static void reset_modifier_pulse(int slot) {
     modifier_slot = slot;
     observed_presses = visible_hold = last_visible_modifiers = 0;
@@ -146,6 +149,11 @@ bool scanner_get_pending_update(struct pending_display_data *out) {
     if (pending) {
         *out = pending_data;
         out->modifiers = shown;
+#if IS_ENABLED(CONFIG_ZMK_PROSPECTOR_SCANNER_TIMING)
+        if (shown != last_visible_modifiers)
+            LOG_WRN("SCAN_VIEW mods=%02x raw=%02x rx_to_view_ms=%u", shown,
+                    pending_data.modifiers, k_uptime_get_32() - selected_received_ms);
+#endif
         last_visible_modifiers = shown;
         pending_data.update_pending = false;
     }
@@ -307,6 +315,7 @@ static void fill_pending_from_selected(void) {
     }
 
     if (modifier_slot != selected_keyboard) reset_modifier_pulse(selected_keyboard);
+    selected_received_ms = slot_received_ms[selected_keyboard];
     d = &keyboards[selected_keyboard].data;
     strncpy(pending_data.device_name, keyboards[selected_keyboard].ble_name, MAX_NAME_LEN - 1);
     pending_data.device_name[MAX_NAME_LEN - 1] = '\0';
@@ -485,6 +494,12 @@ void scanner_process_incoming(void) {
         if (index == selected_keyboard) {
             if (modifier_slot != index || !keyboards[index].active) reset_modifier_pulse(index);
             uint8_t old = keyboards[index].active ? keyboards[index].data.modifier_flags : 0;
+#if IS_ENABLED(CONFIG_ZMK_PROSPECTOR_SCANNER_TIMING)
+            if (old != entry.data.modifier_flags)
+                LOG_WRN("SCAN_RX mods=%02x prev=%02x queue_ms=%u packet_gap_ms=%u",
+                        entry.data.modifier_flags, old, k_uptime_get_32() - entry.received_ms,
+                        keyboards[index].active ? entry.received_ms - slot_received_ms[index] : 0);
+#endif
             observed_presses |= entry.data.modifier_flags & ~old;
         }
 
@@ -493,6 +508,7 @@ void scanner_process_incoming(void) {
         memcpy(&keyboards[index].data, &entry.data, sizeof(struct zmk_status_adv_data));
         keyboards[index].rssi = entry.rssi;
         keyboards[index].last_seen = k_uptime_get_32();
+        slot_received_ms[index] = entry.received_ms;
         memcpy(keyboards[index].ble_addr, entry.ble_addr, 6);
         keyboards[index].ble_addr_type = entry.ble_addr_type;
 
@@ -670,6 +686,7 @@ int scanner_msg_send_keyboard_data(const struct zmk_status_adv_data *adv_data,
     struct incoming_adv entry;
     memcpy(&entry.data, adv_data, sizeof(struct zmk_status_adv_data));
     entry.rssi = rssi;
+    entry.received_ms = k_uptime_get_32();
 
     if (device_name && device_name[0] != '\0') {
         strncpy(entry.name, device_name, MAX_NAME_LEN - 1);
