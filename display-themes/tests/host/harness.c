@@ -13,6 +13,7 @@
 #include "industrial_layout.h"
 #include "segment_layout.h"
 #include "dashboard_layouts.h"
+#include "concept_layouts.h"
 #include "fonts_carrefinho.h"
 
 uint32_t host_ticks;
@@ -78,6 +79,10 @@ static void inspect(lv_obj_t *o,const char *theme) {
         const char *text=lv_label_get_text(o);
         if(text && *text && lv_obj_get_style_text_opa(o,0)>0) {
             lv_area_t a;lv_obj_get_coords(o,&a);inspected++;
+            if((!strcmp(theme,"tape")||!strcmp(theme,"blueprint")||!strcmp(theme,"terminal"))&&!strcmp(text,"WPM")) {
+                lv_point_t size;lv_text_get_size(&size,text,lv_obj_get_style_text_font(o,0),0,0,LV_COORD_MAX,0);
+                assert(size.x<=lv_obj_get_width(o));
+            }
             if(text_count<64){text_regions[text_count].area=a;text_regions[text_count++].text=text;}
             for (lv_obj_t *p=lv_obj_get_parent(o);p;p=lv_obj_get_parent(p)) {
                 if (lv_obj_has_flag(p,LV_OBJ_FLAG_OVERFLOW_VISIBLE)) continue;
@@ -95,7 +100,7 @@ static void inspect(lv_obj_t *o,const char *theme) {
     for(uint32_t i=0;i<lv_obj_get_child_count(o);i++)inspect(lv_obj_get_child(o,i),theme);
 }
 static int verify_modifiers(lv_obj_t *o, uint8_t flags, int style) {
-    const char *symbols[] = {SYMBOL_COMMAND, SYMBOL_OPTION, SYMBOL_CONTROL, SYMBOL_SHIFT};
+    const char *symbols[] = {style>=10?"CMD":SYMBOL_COMMAND, style>=10?"OPT":SYMBOL_OPTION, style>=10?"CTRL":SYMBOL_CONTROL, style>=10?"SHIFT":SYMBOL_SHIFT};
     const uint8_t masks[] = {0x88, 0x44, 0x11, 0x22};
     int found = 0;
     if (lv_obj_check_type(o, &lv_label_class)) {
@@ -104,7 +109,7 @@ static int verify_modifiers(lv_obj_t *o, uint8_t flags, int style) {
             if (style==5) assert(lv_color_eq(lv_obj_get_style_bg_color(lv_obj_get_parent(o), 0),
                 lv_color_hex(active ? 0xFFCA13 : 0x1B2420)));
             assert(lv_color_eq(lv_obj_get_style_text_color(o, 0),
-                lv_color_hex(style>=7 ? (active ? (style==9?0xFF913F:style==8?0x74EAF4:0x27E4F2) : (style==7?0x6A7D8B:0x747779)) : style==6 ? (active ? 0xFFB91D : 0x65635A) : (active ? 0x0D1310 : 0x777C76))));
+                lv_color_hex(style>=10 ? (active ? (style==10?0xE7A245:style==11?0xF0B44C:0xAEEA96) : (style==10?0x66705F:style==11?0x5D8198:0x326845)) : style>=7 ? (active ? (style==9?0xFF913F:style==8?0x74EAF4:0x27E4F2) : (style==7?0x6A7D8B:0x747779)) : style==6 ? (active ? 0xFFB91D : 0x65635A) : (active ? 0x0D1310 : 0x777C76))));
             found++;
         }
     }
@@ -162,17 +167,17 @@ int main(int argc,char **argv) {
     lv_obj_t *cycle_screen=lv_obj_create(NULL);lv_obj_remove_style_all(cycle_screen);
     lv_obj_set_size(cycle_screen,280,240);prospector_layouts_init(cycle_screen);
     prospector_layouts_set_style(PROSPECTOR_LAYOUT_FIELD);
-    for(int n=0;n<45;n++) {
-        int expected=(n%9)+1;assert(prospector_layouts_get_style()==expected);
+    for(int n=0;n<60;n++) {
+        int expected=(n%12)+1;assert(prospector_layouts_get_style()==expected);
         prospector_layouts_next();
     }
-    for(int n=0;n<45;n++) {
-        prospector_layouts_prev();int expected=9-(n%9);
+    for(int n=0;n<60;n++) {
+        prospector_layouts_prev();int expected=12-(n%12);
         assert(prospector_layouts_get_style()==expected);
     }
     prospector_layouts_destroy();lv_obj_delete(cycle_screen);
-    const char *names[]={"field","operator","radii","yads","industrial","segment","orbit","split","mono"};
-    for(int style=1;style<=9;style++) {
+    const char *names[]={"field","operator","radii","yads","industrial","segment","orbit","split","mono","tape","blueprint","terminal"};
+    for(int style=1;style<=12;style++) {
         lv_obj_t *screen=lv_obj_create(NULL);lv_obj_remove_style_all(screen);
         lv_obj_set_size(screen,280,240);lv_obj_set_style_bg_opa(screen,255,0);
         lv_obj_set_style_bg_color(screen,lv_color_black(),0);lv_screen_load(screen);
@@ -198,7 +203,8 @@ int main(int argc,char **argv) {
                     if(style==3)radii_layout_update(9,"VERY_LONG_LAYER_NAME",85,true,72,true,data.modifier_flags,false,3);
                     if(style==5)industrial_layout_update(&data,"VERY_LONG_LAYER_NAME");
                     if(style==6)segment_layout_update(&data,"VERY_LONG_LAYER_NAME");
-                    if(style>=7)dashboard_layout_update(&data,"VERY_LONG_LAYER_NAME");
+                    if(style>=7&&style<=9)dashboard_layout_update(&data,"VERY_LONG_LAYER_NAME");
+                    if(style>=10)concept_layout_update(&data,"VERY_LONG_LAYER_NAME");
                     /* Palette changes must preserve the full DYA layer name. */
                     for(int repeat=0;repeat<4;repeat++)prospector_layouts_cycle_palette();
                 }
@@ -261,9 +267,21 @@ int main(int argc,char **argv) {
     lv_tick_inc(1000);host_ticks+=1000;lv_timer_handler();lv_refr_now(d);
     assert(flush_count==flat_before); /* A full flat history does not repaint. */
     lv_screen_load(parking_screen);prospector_layouts_destroy();lv_obj_delete(trace_screen);
+    lv_obj_t *terminal_screen=lv_obj_create(NULL);lv_obj_remove_style_all(terminal_screen);
+    lv_obj_set_size(terminal_screen,280,240);lv_screen_load(terminal_screen);prospector_layouts_init(terminal_screen);
+    prospector_layouts_set_style(PROSPECTOR_LAYOUT_TERMINAL);
+    for(int k=0;k<60;k++){trace.wpm_value=wave[k%32];prospector_layouts_update(&trace);lv_tick_inc(1000);host_ticks+=1000;lv_timer_handler();}
+    trace.wpm_value=42;prospector_layouts_update(&trace);lv_refr_now(d);unsigned green=0;
+    for(int y=174;y<209;y++)for(int x=24;x<256;x++){unsigned at=(y*280+x)*3;if(frame[at+1]>150&&frame[at]<200&&frame[at+2]<180)green++;}
+    assert(green>20);
+    if(argc>1){char path[1024];snprintf(path,sizeof(path),"%s/terminal-history.ppm",argv[1]);FILE*f=fopen(path,"wb");fprintf(f,"P6\n280 240\n255\n");fwrite(frame,1,sizeof(frame),f);fclose(f);}
+    for(int k=0;k<60;k++){lv_tick_inc(1000);host_ticks+=1000;lv_timer_handler();}
+    lv_refr_now(d);unsigned terminal_flat=flush_count;lv_tick_inc(1000);host_ticks+=1000;lv_timer_handler();lv_refr_now(d);assert(flush_count==terminal_flat);
+    dashboard_layout_reset_history();lv_refr_now(d);unsigned cleared=flush_count;lv_tick_inc(1000);host_ticks+=1000;lv_timer_handler();lv_refr_now(d);assert(flush_count==cleared);
+    lv_screen_load(parking_screen);prospector_layouts_destroy();lv_obj_delete(terminal_screen);
     lv_obj_t *dya_screen=lv_obj_create(NULL);lv_obj_remove_style_all(dya_screen);
     lv_obj_set_size(dya_screen,280,240);prospector_layouts_init(dya_screen);test_dya_contract();
     prospector_layouts_destroy();lv_obj_delete(dya_screen);
-    printf("216 layout states checked; %d foreground rectangles; unsafe: %d; clipped: %d; overlapping: %d\n",inspected,failures,clipping_failures,overlap_failures);
+    printf("288 layout states checked; %d foreground rectangles; unsafe: %d; clipped: %d; overlapping: %d\n",inspected,failures,clipping_failures,overlap_failures);
     return failures||clipping_failures||overlap_failures?1:0;
 }

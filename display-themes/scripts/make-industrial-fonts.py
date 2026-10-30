@@ -4,7 +4,7 @@ Requires Pillow; generated C assets are the only firmware dependencies.
 """
 from pathlib import Path
 import re
-from PIL import Image
+from PIL import Image, ImageFilter, ImageChops
 
 root = Path(__file__).resolve().parents[1]
 source = (root / 'fonts/source/impact_56.c').read_text()
@@ -15,17 +15,34 @@ glyphs = [tuple(map(int, row)) for row in re.findall(
     r'\{\.bitmap_index = (\d+), \.adv_w = (\d+), \.box_w = (\d+), '
     r'\.box_h = (\d+), \.ofs_x = (-?\d+), \.ofs_y = (-?\d+)\}', source)]
 
-def generate(name, codepoints, sx, sy, line_height, baseline, bpp=4):
+def generate(name, codepoints, sx, sy, line_height, baseline, bpp=4, treatment=None):
     packed = bytearray(); descriptors = [(0, 0, 0, 0, 0, 0)]
     for cp in codepoints:
         offset, advance, width, height, ox, oy = glyphs[cp - 32 + 1]
         new_w, new_h = round(width * sx), round(height * sy)
         start = len(packed)
+        shear = 0
         if width and height:
             pixels = [((bitmap[offset + p // 2] >> (0 if p % 2 else 4)) & 15) * 17
                       for p in range(width * height)]
             image = Image.new('L', (width, height)); image.putdata(pixels)
             image = image.resize((new_w, new_h), Image.Resampling.LANCZOS)
+            if treatment == 'blueprint':
+                border = ImageChops.subtract(image.filter(ImageFilter.MaxFilter(3)), image.filter(ImageFilter.MinFilter(3)))
+                src = image.load(); edge = border.load()
+                for yy in range(new_h):
+                    for xx in range(new_w):
+                        edge[xx,yy] = max(edge[xx,yy],src[xx,yy] if (xx+yy)%4==0 else 0)
+                shear = round(new_h*.18)
+                slanted = Image.new('L',(new_w+shear,new_h))
+                for yy in range(new_h):
+                    slanted.paste(border.crop((0,yy,new_w,yy+1)),(round((new_h-1-yy)*.18),yy))
+                image = slanted; new_w += shear
+            elif treatment == 'terminal':
+                px = image.load()
+                for yy in range(new_h):
+                    if yy%5 in (3,4):
+                        for xx in range(new_w):px[xx,yy]=0
             levels = [min(15, max(0, round(p / 17))) for p in image.tobytes()]
             if bpp == 2:
                 levels = [round(p / 5) for p in levels]
@@ -34,7 +51,7 @@ def generate(name, codepoints, sx, sy, line_height, baseline, bpp=4):
             else:
                 if len(levels) % 2: levels.append(0)
                 packed.extend((levels[i] << 4) | levels[i + 1] for i in range(0, len(levels), 2))
-        descriptors.append((start, round(advance * sx), new_w, new_h, round(ox * sx), round(oy * sy)))
+        descriptors.append((start, round(advance * sx)+round(shear*16/3), new_w, new_h, round(ox * sx), round(oy * sy)))
     first = min(codepoints)
     lines = ['/* SPDX-License-Identifier: MIT',
              ' * Derived from fonts/source/impact_56.c.',

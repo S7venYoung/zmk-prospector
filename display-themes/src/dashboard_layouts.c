@@ -1,6 +1,7 @@
 /* Copyright (c) 2026 S7venYoung; SPDX-License-Identifier: MIT
  * ORBIT / SPLIT / MONO: state changes only, no animation or texture buffers. */
 #include "dashboard_layouts.h"
+#include "concept_layouts.h"
 #include "fonts_carrefinho.h"
 #include "connection_icon.h"
 #include <draw/lv_draw_line.h>
@@ -180,6 +181,7 @@ void dashboard_layout_destroy(void){
 }
 
 void dashboard_layout_reset_history(void) {
+    concept_layout_reset_history();
     history_count=history_head=0;history_valid=false;
     if(curve)lv_obj_invalidate(curve);
 }

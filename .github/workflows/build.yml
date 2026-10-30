@@ -1,4 +1,4 @@
-name: Build ms2 nine-theme scanner (manual only)
+name: Build ms2 twelve-theme scanner (manual only)
 on:
   workflow_dispatch:
 jobs:
@@ -39,11 +39,11 @@ jobs:
             zmk-behavior-*
             zmk-stdlib
           key: ms2-dya-v1-${{ runner.os }}-${{ hashFiles('zmk-prospector/west.yml') }}
-      - name: Build kblade ms2 scanner with nine runtime themes
+      - name: Build kblade ms2 scanner with twelve runtime themes
         run: bash zmk-prospector/scripts/build-ms2-scanner.sh "$GITHUB_WORKSPACE"
       - uses: actions/upload-artifact@v4
         with:
-          name: kblade_ms2_scanner_nine_themes
+          name: kblade_ms2_scanner_twelve_themes
           path: |
             build-ms2-scanner/zephyr/zmk.uf2
             build-ms2-scanner/zephyr/zmk.elf

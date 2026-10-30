@@ -14,7 +14,7 @@ if(CONFIG_ZMK_PROSPECTOR_SCANNER_ORIGINAL)
       src/connection_icon.c src/connection_icons_20.c
       src/prospector_layouts.c src/field_layout.c
       src/operator_layout.c src/radii_layout.c
-      src/dashboard_layouts.c src/dashboard_numeric_52.c src/dashboard_base_72.c src/dashboard_mono_96.c
+      src/concept_layouts.c src/tape_cassette_image.c src/blueprint_title_40.c src/blueprint_numeric_32.c src/terminal_title_52.c src/dashboard_layouts.c src/dashboard_numeric_52.c src/dashboard_base_72.c src/dashboard_mono_96.c
       src/segment_layout.c src/segment_18.c src/segment_26.c src/segment_36.c src/segment_48.c src/segment_80.c
       src/yads_layout.c src/yads_history.c src/industrial_layout.c src/industrial_numeric_32.c src/industrial_battery_32.c src/industrial_display_56.c src/industrial_brand_28.c
       ${CMAKE_CURRENT_SOURCE_DIR}/fonts/impact_16.c

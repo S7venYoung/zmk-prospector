@@ -10,6 +10,7 @@
 #include "industrial_layout.h"
 #include "segment_layout.h"
 #include "dashboard_layouts.h"
+#include "concept_layouts.h"
 #include <string.h>
 #include <zephyr/sys/util.h>
 #if IS_ENABLED(CONFIG_ZMK_PROSPECTOR_BOOT_ANIMATION)
@@ -30,7 +31,8 @@ static bool supported(prospector_layout_t style) {
     return style == PROSPECTOR_LAYOUT_FIELD || style == PROSPECTOR_LAYOUT_OPERATOR ||
            style == PROSPECTOR_LAYOUT_RADII || style == PROSPECTOR_LAYOUT_YADS2 ||
            style == PROSPECTOR_LAYOUT_INDUSTRIAL || style == PROSPECTOR_LAYOUT_SEGMENT || style == PROSPECTOR_LAYOUT_ORBIT ||
-           style == PROSPECTOR_LAYOUT_SPLIT || style == PROSPECTOR_LAYOUT_MONO;
+           style == PROSPECTOR_LAYOUT_SPLIT || style == PROSPECTOR_LAYOUT_MONO || style == PROSPECTOR_LAYOUT_TAPE ||
+           style == PROSPECTOR_LAYOUT_BLUEPRINT || style == PROSPECTOR_LAYOUT_TERMINAL;
 }
 static void create_layout(void) {
     switch ((int)current_layout) {
@@ -43,6 +45,9 @@ static void create_layout(void) {
     case PROSPECTOR_LAYOUT_ORBIT:
     case PROSPECTOR_LAYOUT_SPLIT:
     case PROSPECTOR_LAYOUT_MONO: dashboard_layout_create(parent_obj,current_layout); break;
+    case PROSPECTOR_LAYOUT_TAPE:
+    case PROSPECTOR_LAYOUT_BLUEPRINT:
+    case PROSPECTOR_LAYOUT_TERMINAL: concept_layout_create(parent_obj,current_layout); break;
     default: break;
     }
 }
@@ -57,6 +62,9 @@ static void destroy_layout(void) {
     case PROSPECTOR_LAYOUT_ORBIT:
     case PROSPECTOR_LAYOUT_SPLIT:
     case PROSPECTOR_LAYOUT_MONO: dashboard_layout_destroy(); break;
+    case PROSPECTOR_LAYOUT_TAPE:
+    case PROSPECTOR_LAYOUT_BLUEPRINT:
+    case PROSPECTOR_LAYOUT_TERMINAL: concept_layout_destroy(); break;
     default: break;
     }
 }
@@ -107,6 +115,9 @@ static void paint(void) {
     case PROSPECTOR_LAYOUT_ORBIT:
     case PROSPECTOR_LAYOUT_SPLIT:
     case PROSPECTOR_LAYOUT_MONO: dashboard_layout_update(&cached,name); break;
+    case PROSPECTOR_LAYOUT_TAPE:
+    case PROSPECTOR_LAYOUT_BLUEPRINT:
+    case PROSPECTOR_LAYOUT_TERMINAL: concept_layout_update(&cached,name); break;
     default: break;
     }
 }
@@ -153,12 +164,12 @@ void prospector_layouts_update(const struct prospector_keyboard_data *data) {
     paint();
 }
 void prospector_layouts_next(void) {
-    prospector_layouts_set_style(current_layout == PROSPECTOR_LAYOUT_MONO
+    prospector_layouts_set_style(current_layout == PROSPECTOR_LAYOUT_TERMINAL
         ? PROSPECTOR_LAYOUT_FIELD : (prospector_layout_t)(current_layout + 1));
 }
 void prospector_layouts_prev(void) {
     prospector_layouts_set_style(current_layout == PROSPECTOR_LAYOUT_FIELD
-        ? PROSPECTOR_LAYOUT_MONO : (prospector_layout_t)(current_layout - 1));
+        ? PROSPECTOR_LAYOUT_TERMINAL : (prospector_layout_t)(current_layout - 1));
 }
 void prospector_layouts_cycle_palette(void) {
     if (!initialized) return;
@@ -180,6 +191,9 @@ const char *prospector_layouts_get_name(prospector_layout_t style) {
     case PROSPECTOR_LAYOUT_ORBIT: return "Orbit";
     case PROSPECTOR_LAYOUT_SPLIT: return "Split";
     case PROSPECTOR_LAYOUT_MONO: return "Mono";
+    case PROSPECTOR_LAYOUT_TAPE: return "Tape";
+    case PROSPECTOR_LAYOUT_BLUEPRINT: return "Blueprint";
+    case PROSPECTOR_LAYOUT_TERMINAL: return "Terminal";
     default: return "Classic";
     }
 }
