@@ -79,6 +79,16 @@ static void inspect(lv_obj_t *o,const char *theme) {
         const char *text=lv_label_get_text(o);
         if(text && *text && lv_obj_get_style_text_opa(o,0)>0) {
             lv_area_t a;lv_obj_get_coords(o,&a);inspected++;
+            if(!strcmp(theme,"split")&&(!strcmp(text,"SYS")||!strcmp(text,"NAV"))) {
+                const lv_font_t *font=lv_obj_get_style_text_font(o,0);
+                lv_point_t size;lv_text_get_size(&size,text,font,0,0,LV_COORD_MAX,0);
+                assert(font->line_height>=70&&size.x<=lv_obj_get_width(o));
+                for(const char *c=text;*c;c++) {
+                    lv_font_glyph_dsc_t glyph;assert(lv_font_get_glyph_dsc(font,&glyph,*c,0));
+                    assert(glyph.box_h>40);
+                }
+            }
+
             if((!strcmp(theme,"tape")||!strcmp(theme,"blueprint")||!strcmp(theme,"terminal"))&&!strcmp(text,"WPM")) {
                 lv_point_t size;lv_text_get_size(&size,text,lv_obj_get_style_text_font(o,0),0,0,LV_COORD_MAX,0);
                 assert(size.x<=lv_obj_get_width(o));
@@ -235,6 +245,14 @@ int main(int argc,char **argv) {
                 if(palette==0&&argc>1) {
                     lv_refr_now(d);char path[1024];snprintf(path,sizeof(path),"%s/%s-%d.ppm",argv[1],names[style-1],state);
                     FILE*f=fopen(path,"wb");fprintf(f,"P6\n280 240\n255\n");fwrite(frame,1,sizeof(frame),f);fclose(f);
+                }
+                if(style==8&&palette==0&&state==1) {
+                    const char *short_names[]={"SYS","NAV"};
+                    for(int k=0;k<2;k++) {
+                        dashboard_layout_update(&data,short_names[k]);lv_obj_update_layout(screen);
+                        text_count=0;inspect(screen,"split");check_overlaps("split");lv_refr_now(d);
+                        if(argc>1){char path[1024];snprintf(path,sizeof(path),"%s/split-%s.ppm",argv[1],short_names[k]);FILE*f=fopen(path,"wb");assert(f);fprintf(f,"P6\n280 240\n255\n");fwrite(frame,1,sizeof(frame),f);fclose(f);}
+                    }
                 }
             }
             prospector_layouts_cycle_palette();

@@ -88,7 +88,7 @@ if __name__ == '__main__':
     generate('industrial_battery_32', [32, 45] + list(range(48, 58)), 0.70*32/56, 32/56, 34, 5)
 
     generate('dashboard_numeric_52', [32, 45, 46] + list(range(48, 58)), 52/56, 52/56, 54, 8, bpp=2)
-    generate('dashboard_base_72', sorted(set(map(ord, ' .ABES'))), 1.50, 72/56, 74, 12, bpp=2)
+    generate('dashboard_base_72', sorted(set(map(ord, ' .ABESNVY'))), 1.50, 72/56, 74, 12, bpp=2)
 
     generate('dashboard_mono_96', sorted(set(map(ord, ' .ABES'))), 1.70, 96/56, 98, 16, bpp=2)
 

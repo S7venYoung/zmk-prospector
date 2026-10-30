@@ -141,7 +141,17 @@ void dashboard_layout_update(const struct prospector_keyboard_data *d,const char
     if(strcmp(name_buf,upper)) {
         strcpy(name_buf,upper);const lv_font_t *font=&impact_20;
         if(kind==PROSPECTOR_LAYOUT_MONO){font=&industrial_display_56;lv_point_t s;lv_text_get_size(&s,upper,font,0,0,LV_COORD_MAX,0);if(s.x>202)font=&FR_Regular_36;lv_text_get_size(&s,upper,font,0,0,LV_COORD_MAX,0);if(s.x>202)font=&impact_20;}
-        if(kind==PROSPECTOR_LAYOUT_SPLIT&&!strcmp(upper,"BASE"))font=&dashboard_base_72;
+        if(kind==PROSPECTOR_LAYOUT_SPLIT) {
+            /* Keep short layer names as prominent as BASE; fit longer names. */
+            lv_point_t size;
+            font=strspn(upper," .ABESNVY")==strlen(upper)?&dashboard_base_72:&industrial_display_56;
+            lv_text_get_size(&size,upper,font,0,0,LV_COORD_MAX,0);
+            if(size.x>170)font=&industrial_display_56;
+            lv_text_get_size(&size,upper,font,0,0,LV_COORD_MAX,0);
+            if(size.x>170)font=&FR_Regular_36;
+            lv_text_get_size(&size,upper,font,0,0,LV_COORD_MAX,0);
+            if(size.x>170)font=&impact_20;
+        }
         if(kind==PROSPECTOR_LAYOUT_MONO&&!strcmp(upper,"BASE"))font=&dashboard_base_72;
         lv_obj_set_style_text_font(layer,font,0);lv_obj_set_height(layer,font->line_height);
         lv_obj_set_y(layer,kind==PROSPECTOR_LAYOUT_ORBIT?67:kind==PROSPECTOR_LAYOUT_SPLIT?78+(74-font->line_height)/2:69+(74-font->line_height)/2);
