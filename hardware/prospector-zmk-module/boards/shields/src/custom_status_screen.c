@@ -765,8 +765,11 @@ lv_obj_t *zmk_display_status_screen(void) {
 
     /* Create pending update timer - processes Work Queue data in main thread */
     if (!pending_update_timer) {
+#if IS_ENABLED(CONFIG_ZMK_PROSPECTOR_BROADCAST_SCANNER)
+        pending_update_timer = lv_timer_create(pending_update_timer_cb, 20, NULL);
+#else
         pending_update_timer = lv_timer_create(pending_update_timer_cb, 100, NULL);
-        LOG_INF("Pending update timer registered (100ms interval)");
+#endif
     }
 
     /* Log page (screen 6): its LVGL timer lives in custom_status_screen_log.c

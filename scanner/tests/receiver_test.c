@@ -19,11 +19,13 @@ void prospector_layouts_update(const struct prospector_keyboard_data *data){if(!
 #include "../src/status_scanner.c"
 uint8_t scanner_get_runtime_channel(void){return test_channel;}
 _Static_assert(sizeof(struct zmk_status_adv_data)==26,"legacy packet size");
-static void packet(const struct zmk_status_adv_data *d,uint8_t addr_byte) {
+static void queue_packet(const struct zmk_status_adv_data *d,uint8_t addr_byte) {
     uint8_t raw[2+sizeof(*d)];raw[0]=sizeof(*d)+1;raw[1]=BT_DATA_MANUFACTURER_DATA;memcpy(raw+2,d,sizeof(*d));
     struct net_buf_simple buf={.data=raw,.len=sizeof(raw)};
     bt_addr_le_t addr={.type=1,.a={{addr_byte,2,3,4,5,6}}};scan_callback(&addr,-55,0,&buf);
-    scanner_process_incoming();
+}
+static void packet(const struct zmk_status_adv_data *d,uint8_t addr_byte) {
+    queue_packet(d, addr_byte); scanner_process_incoming();
 }
 int main(void) {
     scanner_init_start();assert(!zmk_status_scanner_start());
@@ -36,6 +38,19 @@ int main(void) {
     /* Malformed AD lengths must neither over-read nor create a keyboard. */
     uint8_t bad[]={28,255,1,2,3};struct net_buf_simple shortbuf={.data=bad,.len=sizeof(bad)};
     bt_addr_le_t addr={.a={{9,8,7,6,5,4}}};scan_callback(&addr,-70,0,&shortbuf);scanner_process_incoming();assert(scanner_get_active_keyboard_count()==1);
+    /* A press/release received in one drain must still be visible once. */
+    data.modifier_flags=0;test_now+=100;packet(&data,1);scanner_get_pending_update(&out);
+    data.modifier_flags=0x08;queue_packet(&data,1);
+    data.modifier_flags=0;queue_packet(&data,1);scanner_process_incoming();
+    assert(scanner_get_pending_update(&out)&&out.modifiers==0x08);
+    struct zmk_keyboard_status raw;assert(scanner_copy_keyboard_status(0,&raw));
+    assert(raw.data.modifier_flags==0); /* display pulse must not falsify raw state */
+    test_now+=79;assert(!scanner_get_pending_update(&out));
+    test_now+=1;assert(scanner_get_pending_update(&out)&&out.modifiers==0);
+    /* Independent bits and a held modifier remain truthful after pulse expiry. */
+    data.modifier_flags=0x0a;packet(&data,1);assert(scanner_get_pending_update(&out)&&out.modifiers==0x0a);
+    test_now+=100;assert(!scanner_get_pending_update(&out));
+    data.modifier_flags=0;packet(&data,1);assert(scanner_get_pending_update(&out)&&out.modifiers==0);
     /* A second sender remains independently selectable. */
     data.keyboard_id[0]=9;data.wpm_value=80;data.status_flags=ZMK_STATUS_FLAG_BLE_CONNECTED;packet(&data,9);assert(scanner_get_active_keyboard_count()==2);
     assert(scanner_set_selected_keyboard(1)==0);assert(ble_get_pending_update(&out));assert(out.wpm==80&&out.ble_connected&&!out.usb_ready);assert(history_resets==1);
@@ -45,5 +60,5 @@ int main(void) {
     assert(ble_get_pending_update(&out)&&out.bat[0]==79&&out.bat[1]==83);
     /* Timeout invalidates all stale state rather than retaining old WPM. */
     test_now+=CONFIG_PROSPECTOR_SCANNER_TIMEOUT_MS+1500;for(int i=0;i<10;i++)scanner_process_incoming();assert(scanner_get_active_keyboard_count()==0);assert(ble_get_pending_update(&out)&&out.no_keyboards);assert(empty_views==1&&history_resets==4);assert(!ble_get_pending_update(&out));
-    puts("receiver: signature/channel/malformed AD/two senders/selection/timeout/source-reset/DYA-selection/hand-swap passed");
+    puts("receiver: signature/channel/malformed AD/two senders/selection/timeout/source-reset/DYA-selection/hand-swap/modifier-pulse/raw-state passed");
 }

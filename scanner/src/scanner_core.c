@@ -1,9 +1,9 @@
 /**
  * Scanner Core - keyboard state tracking shared by every scanner shield
  *
- * Architecture (ring buffer + work handler, matching v2.1.0 timing):
+ * Architecture (ring buffer + event-driven work handler):
  *   BT RX thread → ring buffer push (non-blocking, no mutex)
- *   Work handler (100ms) → scanner_process_incoming() → drain ring buffer
+ *   Work handler (on RX; 100ms maintenance) → scanner_process_incoming() → drain ring buffer
  *                         → manage keyboards[] → set pending_data
  *   Display thread       → read pending_data → widget update (display only)
  *
@@ -54,7 +54,7 @@ static bool mutex_initialized = false;
 /* ========== SPSC Ring Buffer (BT RX → LVGL timer) ========== */
 
 /* 32 entries (~2.2KB): a profile-change burst (5 adv × multiple keyboards)
- * arriving within one 50ms batch window must not overflow the ring, or the
+ * arriving before the consumer can run must not overflow the ring, or the
  * very advertisement carrying the change gets dropped and the display
  * appears stuck until the next steady-state advert. */
 #define INCOMING_BUF_SIZE 32  /* Must be power of 2 */
@@ -110,17 +110,43 @@ static struct pending_display_data pending_data = {0};
  * On lock timeout we report "nothing pending" - the LVGL timer polls again
  * on its next tick, so nothing is lost. */
 
+/* Preserve observed edges until the display has consumed them. This is only a
+ * visual pulse; keyboard snapshots and outgoing HID state remain untouched. */
+static int modifier_slot = -1;
+static uint8_t observed_presses, visible_hold, last_visible_modifiers;
+static uint32_t modifier_until[8];
+static void reset_modifier_pulse(int slot) {
+    modifier_slot = slot;
+    observed_presses = visible_hold = last_visible_modifiers = 0;
+    memset(modifier_until, 0, sizeof(modifier_until));
+}
+
 /* Getter for pending data - called from LVGL display thread */
 bool scanner_get_pending_update(struct pending_display_data *out) {
-    if (!mutex_initialized || !pending_data.update_pending) {
-        return false;
+    if (!mutex_initialized || k_mutex_lock(&data_mutex, K_MSEC(10)) != 0) return false;
+    uint8_t shown = pending_data.modifiers;
+    if (pending_data.no_keyboards) {
+        reset_modifier_pulse(-1);
+        shown = 0;
+    } else {
+        uint32_t now = k_uptime_get_32();
+        for (int bit = 0; bit < 8; bit++) {
+            uint8_t mask = 1U << bit;
+            if (observed_presses & mask) {
+                visible_hold |= mask;
+                modifier_until[bit] = now + 80;
+            } else if ((visible_hold & mask) && (int32_t)(now - modifier_until[bit]) >= 0) {
+                visible_hold &= ~mask;
+            }
+        }
+        observed_presses = 0;
+        shown |= visible_hold;
     }
-    if (k_mutex_lock(&data_mutex, K_MSEC(10)) != 0) {
-        return false;
-    }
-    bool pending = pending_data.update_pending;
+    bool pending = pending_data.update_pending || shown != last_visible_modifiers;
     if (pending) {
         *out = pending_data;
+        out->modifiers = shown;
+        last_visible_modifiers = shown;
         pending_data.update_pending = false;
     }
     k_mutex_unlock(&data_mutex);
@@ -280,6 +306,7 @@ static void fill_pending_from_selected(void) {
         return;
     }
 
+    if (modifier_slot != selected_keyboard) reset_modifier_pulse(selected_keyboard);
     d = &keyboards[selected_keyboard].data;
     strncpy(pending_data.device_name, keyboards[selected_keyboard].ble_name, MAX_NAME_LEN - 1);
     pending_data.device_name[MAX_NAME_LEN - 1] = '\0';
@@ -332,14 +359,9 @@ int scanner_set_selected_keyboard(int index) {
 
 static void process_work_handler(struct k_work *work);
 static K_WORK_DELAYABLE_DEFINE(process_work, process_work_handler);
-static volatile bool process_pending = false;
-
 static void schedule_process(void) {
-    if (!process_pending) {
-        process_pending = true;
-        /* Batch rapid advertisements with 50ms delay (same as v2.1.0) */
-        k_work_schedule(&process_work, K_MSEC(50));
-    }
+    /* Pull the periodic deadline forward when an advertisement arrives. */
+    k_work_reschedule(&process_work, K_MSEC(0));
 }
 
 /* ========== Rate Calculation State ========== */
@@ -458,6 +480,12 @@ void scanner_process_incoming(void) {
                     selected_keyboard, index);
             selected_keyboard = index;
             high_priority_change = true;
+        }
+
+        if (index == selected_keyboard) {
+            if (modifier_slot != index || !keyboards[index].active) reset_modifier_pulse(index);
+            uint8_t old = keyboards[index].active ? keyboards[index].data.modifier_flags : 0;
+            observed_presses |= entry.data.modifier_flags & ~old;
         }
 
         /* Store the data */
@@ -623,7 +651,6 @@ __weak void scanner_core_process_alive(void) {
 
 static void process_work_handler(struct k_work *work) {
     ARG_UNUSED(work);
-    process_pending = false;
     scanner_core_process_alive();
 
     if (mutex_initialized && k_mutex_lock(&data_mutex, K_MSEC(50)) == 0) {
@@ -668,7 +695,7 @@ int scanner_msg_send_keyboard_data(const struct zmk_status_adv_data *adv_data,
     /* Count for rate calculation (atomic, safe from any thread) */
     atomic_inc(&adv_receive_count);
 
-    /* Trigger work handler to process (batched with 50ms delay like v2.1.0) */
+    /* Wake the consumer immediately; LVGL remains on its own thread. */
     schedule_process();
 
     return 0;

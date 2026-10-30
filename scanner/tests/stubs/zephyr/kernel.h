@@ -26,3 +26,5 @@ struct k_work {int unused;};
 struct k_work_delayable {struct k_work work;void(*handler)(struct k_work*);};
 #define K_WORK_DELAYABLE_DEFINE(n,h) struct k_work_delayable n={.handler=h}
 static inline int k_work_schedule(struct k_work_delayable*w,int delay){(void)w;(void)delay;return 0;}
+
+static inline int k_work_reschedule(struct k_work_delayable*w,int delay){(void)w;(void)delay;return 0;}
