@@ -8,7 +8,7 @@ lvgl, module, out=map(lambda s:pathlib.Path(s).resolve(),sys.argv[1:])
 out.mkdir(parents=True,exist_ok=True)
 shared=module/'boards/shields/src'
 flags=['-include','stdlib.h','-DLV_USE_LOG=1','-DLV_LOG_PRINTF=1','-DLV_LOG_LEVEL=2','-DLV_ASSERT_HANDLER=abort();','-std=c99','-O0','-g','-DLV_CONF_SKIP','-DLV_COLOR_DEPTH=24',
-       '-DCONFIG_ZMK_PROSPECTOR_DYA_SETTINGS=0','-DCONFIG_ZMK_PROSPECTOR_BROADCAST_SCANNER=1','-DCONFIG_PROSPECTOR_MAX_KEYBOARDS=3','-DCONFIG_ZMK_LOG_LEVEL=1','-DCONFIG_PROSPECTOR_DEFAULT_LAYOUT=2',
+       '-DCONFIG_ZMK_PROSPECTOR_BOOT_ANIMATION=1','-DCONFIG_ZMK_PROSPECTOR_DYA_SETTINGS=0','-DCONFIG_ZMK_PROSPECTOR_BROADCAST_SCANNER=1','-DCONFIG_PROSPECTOR_MAX_KEYBOARDS=3','-DCONFIG_ZMK_LOG_LEVEL=1','-DCONFIG_PROSPECTOR_DEFAULT_LAYOUT=2',
        '-I'+str(lvgl),'-I'+str(lvgl/'src'),'-I'+str(root/'tests/host/stubs'),
        '-I'+str(root/'src'),'-I'+str(shared)]
 sources=list((lvgl/'src').rglob('*.c'))

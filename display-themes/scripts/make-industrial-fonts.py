@@ -63,13 +63,16 @@ def generate(name, codepoints, sx, sy, line_height, baseline, bpp=4):
     target.write_text('\n'.join(lines))
     print(f'{name}: {len(packed)} bitmap bytes, {len(codepoints)} glyphs')
 
-generate('industrial_numeric_32', [32, 37, 45, 46] + list(range(48, 58)), 32/56, 32/56, 34, 5)
-generate('industrial_display_56', list(range(32, 96)), 1.70, 1, 58, 9)
-generate('industrial_brand_28', sorted(set(map(ord, ' .CORNE'))), .5, .5, 29, 5)
+if __name__ == '__main__':
+    generate('industrial_numeric_32', [32, 37, 45, 46] + list(range(48, 58)), 32/56, 32/56, 34, 5)
+    generate('industrial_display_56', list(range(32, 96)), 1.70, 1, 58, 9)
+    generate('industrial_brand_28', sorted(set(map(ord, ' .CORNE'))), .5, .5, 29, 5)
 
-generate('industrial_battery_32', [32, 45] + list(range(48, 58)), 0.70*32/56, 32/56, 34, 5)
+    generate('industrial_battery_32', [32, 45] + list(range(48, 58)), 0.70*32/56, 32/56, 34, 5)
 
-generate('dashboard_numeric_52', [32, 45, 46] + list(range(48, 58)), 52/56, 52/56, 54, 8, bpp=2)
-generate('dashboard_base_72', sorted(set(map(ord, ' .ABES'))), 1.50, 72/56, 74, 12, bpp=2)
+    generate('dashboard_numeric_52', [32, 45, 46] + list(range(48, 58)), 52/56, 52/56, 54, 8, bpp=2)
+    generate('dashboard_base_72', sorted(set(map(ord, ' .ABES'))), 1.50, 72/56, 74, 12, bpp=2)
 
-generate('dashboard_mono_96', sorted(set(map(ord, ' .ABES'))), 1.70, 96/56, 98, 16, bpp=2)
+    generate('dashboard_mono_96', sorted(set(map(ord, ' .ABES'))), 1.70, 96/56, 98, 16, bpp=2)
+
+    generate('boot_title_56', sorted(set(map(ord, 'CORNE'))), 1.0, 1.0, 58, 9, bpp=2)

@@ -12,6 +12,9 @@
 #include "dashboard_layouts.h"
 #include <string.h>
 #include <zephyr/sys/util.h>
+#if IS_ENABLED(CONFIG_ZMK_PROSPECTOR_BOOT_ANIMATION)
+#include "boot_animation.h"
+#endif
 #include <stdio.h>
 #if IS_ENABLED(CONFIG_ZMK_PROSPECTOR_DYA_SETTINGS)
 #include "dya_settings.h"
@@ -118,11 +121,17 @@ void prospector_layouts_init(lv_obj_t *parent) {
 #if IS_ENABLED(CONFIG_ZMK_PROSPECTOR_DYA_SETTINGS)
     prospector_dya_start();
 #endif
+#if IS_ENABLED(CONFIG_ZMK_PROSPECTOR_BOOT_ANIMATION)
+    prospector_boot_start(parent);
+#endif
 }
 void prospector_layouts_destroy(void) {
     if (!initialized) return;
 #if IS_ENABLED(CONFIG_ZMK_PROSPECTOR_DYA_SETTINGS)
     prospector_dya_stop();
+#endif
+#if IS_ENABLED(CONFIG_ZMK_PROSPECTOR_BOOT_ANIMATION)
+    prospector_boot_stop();
 #endif
     destroy_layout();
     initialized = false;

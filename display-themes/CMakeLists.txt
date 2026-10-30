@@ -24,6 +24,7 @@ if(CONFIG_ZMK_PROSPECTOR_SCANNER_ORIGINAL)
   else()
     target_sources(app PRIVATE src/yads_input.c)
   endif()
+  target_sources_ifdef(CONFIG_ZMK_PROSPECTOR_BOOT_ANIMATION app PRIVATE src/boot_animation.c src/boot_title_56.c)
   target_sources_ifdef(CONFIG_ZMK_PROSPECTOR_DYA_SETTINGS app PRIVATE src/dya_settings.c)
 endif()
 

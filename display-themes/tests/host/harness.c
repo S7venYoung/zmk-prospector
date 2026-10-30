@@ -4,6 +4,7 @@
 #include <math.h>
 #include <assert.h>
 #include "prospector_layouts.h"
+#include "boot_animation.h"
 #include "yads_history.h"
 #include "yads_input.h"
 #include "field_layout.h"
@@ -129,6 +130,34 @@ int main(int argc,char **argv) {
     lv_display_set_buffers(d,draw_buf,NULL,sizeof(draw_buf),LV_DISPLAY_RENDER_MODE_PARTIAL);
     lv_display_set_flush_cb(d,flush);
     lv_obj_t *parking_screen=lv_screen_active();
+    /* Render boot frames through real LVGL, and verify one-shot cleanup. */
+    unsigned top_children = lv_obj_get_child_count(lv_display_get_layer_top(d));
+    prospector_layouts_init(parking_screen);
+    assert(prospector_boot_active());
+    unsigned boot_times[] = {0, 300, 650, 950, 1150};
+    unsigned last_boot_time = 0;
+    for (unsigned n = 0; n < 5; n++) {
+        unsigned delta = boot_times[n] - last_boot_time;
+        host_ticks += delta; lv_tick_inc(delta); lv_timer_handler();
+        lv_refr_now(d);
+        if (boot_times[n] < 850) {
+            for (int y = 0; y < 240; y++) for (int x = 0; x < 280; x++) {
+                unsigned at = (y * 280 + x) * 3;
+                if (frame[at] || frame[at + 1] || frame[at + 2]) assert(safe(x, y));
+            }
+        }
+        if (argc > 1) {
+            char path[1024]; snprintf(path, sizeof(path), "%s/boot-%u.ppm", argv[1], boot_times[n]);
+            FILE *f = fopen(path, "wb"); assert(f);
+            fprintf(f, "P6\n280 240\n255\n"); fwrite(frame, 1, sizeof(frame), f); fclose(f);
+        }
+        last_boot_time = boot_times[n];
+    }
+    assert(!prospector_boot_active());
+    assert(lv_obj_get_child_count(lv_display_get_layer_top(d)) == top_children);
+    prospector_layouts_destroy();
+    prospector_boot_start(parking_screen); assert(!prospector_boot_active());
+    prospector_boot_stop(); prospector_boot_stop();
     /* Check forward/reverse switching while live renderers/timers exist. */
     lv_obj_t *cycle_screen=lv_obj_create(NULL);lv_obj_remove_style_all(cycle_screen);
     lv_obj_set_size(cycle_screen,280,240);prospector_layouts_init(cycle_screen);

@@ -11,3 +11,10 @@ config ZMK_PROSPECTOR_DYA_SETTINGS
     help
       Expose dongle_display_settings in DYA and apply changes from the LVGL
       thread. Requires the same main+dya core as the Prospector dongle project.
+
+config ZMK_PROSPECTOR_BOOT_ANIMATION
+    bool "One-shot CORNE scanner boot animation"
+    depends on ZMK_PROSPECTOR_SCANNER_ORIGINAL && ZMK_PROSPECTOR_BROADCAST_SCANNER
+    help
+      Reveal CORNE with an amber scan beam, then fade into the saved theme.
+      Uses LVGL timers without blocking USB, Studio RPC or BLE scanning.
