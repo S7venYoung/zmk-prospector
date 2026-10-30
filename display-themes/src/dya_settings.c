@@ -15,6 +15,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/led.h>
 #include "dya_settings.h"
+#include "backlight_init.h"
 #define SUBSYSTEM "dongle_display_settings"
 static struct zmk_rpc_custom_subsystem_meta display_meta = {
     ZMK_RPC_CUSTOM_SUBSYSTEM_UI_URLS(),
@@ -59,7 +60,7 @@ static void apply(lv_timer_t *timer) {
 #if DT_HAS_COMPAT_STATUS_OKAY(pwm_leds)
     const struct device *backlight = DEVICE_DT_GET(DT_COMPAT_GET_ANY_STATUS_OKAY(pwm_leds));
     if (brightness >= 1 && brightness <= 100 && device_is_ready(backlight))
-        led_set_brightness(backlight, 0, (uint8_t)(100 - brightness));
+        prospector_backlight_request((uint8_t)(100 - brightness));
 #endif
 }
 static int changed(const zmk_event_t *eh) {

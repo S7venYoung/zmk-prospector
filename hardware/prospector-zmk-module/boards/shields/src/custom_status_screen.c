@@ -16,6 +16,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/reboot.h>
 #include <zephyr/retention/bootmode.h>  /* For bootmode_set() - Zephyr 4.x bootloader entry */
+#include "backlight_init.h"
 #include <zephyr/drivers/led.h>  /* For PWM backlight control */
 #include <string.h>
 #include <lvgl.h>
@@ -167,7 +168,7 @@ static void set_pwm_brightness(uint8_t brightness) {
     /* INVERT: Backlight circuit is inverted (100% PWM = dark, 0% = bright)
      * So we invert: user's 100% brightness → 0% PWM duty, 1% brightness → 99% PWM */
     uint8_t pwm_value = 100 - brightness;
-    int ret = led_set_brightness(backlight_dev, 0, pwm_value);
+    int ret = prospector_backlight_request(pwm_value);
     if (ret < 0) {
         LOG_ERR("Failed to set brightness: %d", ret);
     } else {
@@ -519,7 +520,22 @@ static void pending_update_timer_cb(lv_timer_t *timer) {
 
 /* ========== Main Screen Creation (NO CONTAINERS) ========== */
 
+#if IS_ENABLED(CONFIG_ZMK_PROSPECTOR_BROADCAST_SCANNER)
+static void scanner_first_frame(lv_event_t *event) {
+    ARG_UNUSED(event);
+    prospector_backlight_first_frame();
+}
+#endif
+
 lv_obj_t *zmk_display_status_screen(void) {
+#if IS_ENABLED(CONFIG_ZMK_PROSPECTOR_BROADCAST_SCANNER)
+    static bool registered;
+    if (!registered) {
+        lv_display_add_event_cb(lv_display_get_default(), scanner_first_frame,
+                                LV_EVENT_REFR_READY, NULL);
+        registered = true;
+    }
+#endif
     LOG_INF("=============================================");
     LOG_INF("=== Full Widget Test - NO CONTAINER ===");
     LOG_INF("=== All widgets use absolute positioning ===");

@@ -1,9 +1,9 @@
 /*
- * Simple backlight initialization - turns on backlight at boot
+ * Backlight initialization and first-frame gate
  * Uses PWM LED driver for brightness control
  *
  * This runs at SYS_INIT priority 50, BEFORE display initialization,
- * ensuring the backlight is on even if display init fails.
+ * Scanner startup stays dark until LVGL has transferred a complete frame.
  */
 
 #include <zephyr/kernel.h>
@@ -11,6 +11,7 @@
 #include <zephyr/drivers/led.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/logging/log.h>
+#include "backlight_init.h"
 
 LOG_MODULE_REGISTER(backlight_init, LOG_LEVEL_INF);
 
@@ -37,6 +38,23 @@ static const struct device *backlight_dev = DEVICE_DT_GET(BACKLIGHT_NODE);
 
 #if HAS_PWM_BACKLIGHT
 
+static uint8_t requested_brightness = DEFAULT_BRIGHTNESS;
+static bool first_frame_ready = !IS_ENABLED(CONFIG_ZMK_PROSPECTOR_BROADCAST_SCANNER);
+
+int prospector_backlight_request(uint8_t pwm_level) {
+    if (pwm_level > 100) return -EINVAL;
+    requested_brightness = pwm_level;
+    if (!device_is_ready(backlight_dev)) return -ENODEV;
+    return first_frame_ready ? led_set_brightness(backlight_dev, 0, pwm_level) : 0;
+}
+
+void prospector_backlight_first_frame(void) {
+    if (first_frame_ready) return;
+    first_frame_ready = true;
+    if (device_is_ready(backlight_dev))
+        led_set_brightness(backlight_dev, 0, requested_brightness);
+}
+
 static int backlight_init(void) {
     int ret;
 
@@ -48,13 +66,14 @@ static int backlight_init(void) {
     }
 
     /* Set initial brightness to default value */
-    ret = led_set_brightness(backlight_dev, 0, DEFAULT_BRIGHTNESS);
+    ret = led_set_brightness(backlight_dev, 0,
+                             first_frame_ready ? requested_brightness : 100);
     if (ret < 0) {
         LOG_ERR("Failed to set backlight brightness: %d", ret);
         return ret;
     }
 
-    LOG_INF("Backlight turned ON at %d%% brightness", DEFAULT_BRIGHTNESS);
+    LOG_INF("Backlight initialized; first frame ready=%d", first_frame_ready);
 
     return 0;
 }
@@ -62,5 +81,7 @@ static int backlight_init(void) {
 SYS_INIT(backlight_init, APPLICATION, 50);
 
 #else
+int prospector_backlight_request(uint8_t pwm_level) { (void)pwm_level; return -ENODEV; }
+void prospector_backlight_first_frame(void) {}
 #warning "PWM backlight LED node not found"
 #endif
