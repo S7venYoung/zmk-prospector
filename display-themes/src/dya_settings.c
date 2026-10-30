@@ -58,7 +58,7 @@ static void apply(lv_timer_t *timer) {
     if (theme < 3) for (int i = 0; i < ((palette - current + 4) % 4); i++)
         prospector_layouts_cycle_palette();
 #if DT_HAS_COMPAT_STATUS_OKAY(pwm_leds)
-    const struct device *backlight = DEVICE_DT_GET(DT_COMPAT_GET_ANY_STATUS_OKAY(pwm_leds));
+    const struct device *backlight = DEVICE_DT_GET(DT_PARENT(DT_NODELABEL(backlight)));
     if (brightness >= 1 && brightness <= 100 && device_is_ready(backlight))
         prospector_backlight_request((uint8_t)(100 - brightness));
 #endif

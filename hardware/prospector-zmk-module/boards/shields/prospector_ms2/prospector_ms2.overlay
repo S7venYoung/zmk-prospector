@@ -16,11 +16,12 @@
 
 
     /* PWM backlight control for brightness adjustment - Pin 6 = P1.11 */
-    /* 10 us = 100 kHz: reduce visible PWM modulation on bright text. */
+    /* 10 us = 100 kHz. Match the previously selected board LED polarity
+     * so existing 100-brightness mapping and saved brightness stay consistent. */
     pwmleds {
         compatible = "pwm-leds";
         backlight: backlight {
-            pwms = <&pwm0 0 PWM_USEC(10) PWM_POLARITY_NORMAL>;
+            pwms = <&pwm0 0 PWM_USEC(10) PWM_POLARITY_INVERTED>;
             label = "Backlight";
         };
     };

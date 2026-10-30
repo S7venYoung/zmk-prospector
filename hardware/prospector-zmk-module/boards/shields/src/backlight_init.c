@@ -17,7 +17,9 @@ LOG_MODULE_REGISTER(backlight_init, LOG_LEVEL_INF);
 
 /* Backlight PWM LED node */
 #if DT_HAS_COMPAT_STATUS_OKAY(pwm_leds)
-#define BACKLIGHT_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(pwm_leds)
+#define BACKLIGHT_LED_NODE DT_NODELABEL(backlight)
+#define BACKLIGHT_NODE DT_PARENT(BACKLIGHT_LED_NODE)
+#define BACKLIGHT_LED_INDEX DT_NODE_CHILD_IDX(BACKLIGHT_LED_NODE)
 static const struct device *backlight_dev = DEVICE_DT_GET(BACKLIGHT_NODE);
 #define HAS_PWM_BACKLIGHT 1
 #else
@@ -45,14 +47,14 @@ int prospector_backlight_request(uint8_t pwm_level) {
     if (pwm_level > 100) return -EINVAL;
     requested_brightness = pwm_level;
     if (!device_is_ready(backlight_dev)) return -ENODEV;
-    return first_frame_ready ? led_set_brightness(backlight_dev, 0, pwm_level) : 0;
+    return first_frame_ready ? led_set_brightness(backlight_dev, BACKLIGHT_LED_INDEX, pwm_level) : 0;
 }
 
 void prospector_backlight_first_frame(void) {
     if (first_frame_ready) return;
     first_frame_ready = true;
     if (device_is_ready(backlight_dev))
-        led_set_brightness(backlight_dev, 0, requested_brightness);
+        led_set_brightness(backlight_dev, BACKLIGHT_LED_INDEX, requested_brightness);
 }
 
 static int backlight_init(void) {
@@ -66,7 +68,7 @@ static int backlight_init(void) {
     }
 
     /* Set initial brightness to default value */
-    ret = led_set_brightness(backlight_dev, 0,
+    ret = led_set_brightness(backlight_dev, BACKLIGHT_LED_INDEX,
                              first_frame_ready ? requested_brightness : 100);
     if (ret < 0) {
         LOG_ERR("Failed to set backlight brightness: %d", ret);
