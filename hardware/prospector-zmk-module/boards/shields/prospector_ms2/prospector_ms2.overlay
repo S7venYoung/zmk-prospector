@@ -16,11 +16,11 @@
 
 
     /* PWM backlight control for brightness adjustment - Pin 6 = P1.11 */
-    /* PWM period: 1000us = 1kHz for flicker-free operation */
+    /* 10 us = 100 kHz: reduce visible PWM modulation on bright text. */
     pwmleds {
         compatible = "pwm-leds";
         backlight: backlight {
-            pwms = <&pwm0 0 PWM_USEC(1000) PWM_POLARITY_NORMAL>;
+            pwms = <&pwm0 0 PWM_USEC(10) PWM_POLARITY_NORMAL>;
             label = "Backlight";
         };
     };
