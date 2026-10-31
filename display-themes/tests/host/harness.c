@@ -32,10 +32,16 @@ void yads_input_text(uint8_t layer,const char *name,char out[32]) {
 }
 extern void test_dya_contract(void);
 static unsigned flush_count;
+static bool tape_motion_guard;
+static unsigned tape_motion_pixels;
 static uint8_t frame[280 * 240 * 3];
 static uint8_t draw_buf[280 * 32 * 3] __attribute__((aligned(64)));
 static void flush(lv_display_t *d, const lv_area_t *a, uint8_t *p) {
     flush_count++;
+    if(tape_motion_guard) {
+        assert(a->x1>=36&&a->x2<=245&&a->y1>=68&&a->y2<=126);
+        tape_motion_pixels+=(a->x2-a->x1+1)*(a->y2-a->y1+1);
+    }
     for (int y=a->y1;y<=a->y2;y++) for(int x=a->x1;x<=a->x2;x++) {
         /* LVGL RGB888 memory order is B,G,R. */
         unsigned src=((y-a->y1)*(a->x2-a->x1+1)+(x-a->x1))*3;
@@ -297,6 +303,48 @@ int main(int argc,char **argv) {
     lv_refr_now(d);unsigned terminal_flat=flush_count;lv_tick_inc(1000);host_ticks+=1000;lv_timer_handler();lv_refr_now(d);assert(flush_count==terminal_flat);
     dashboard_layout_reset_history();lv_refr_now(d);unsigned cleared=flush_count;lv_tick_inc(1000);host_ticks+=1000;lv_timer_handler();lv_refr_now(d);assert(flush_count==cleared);
     lv_screen_load(parking_screen);prospector_layouts_destroy();lv_obj_delete(terminal_screen);
+    /* Real timer-driven motion, bounded redraws, coast-to-stop and teardown. */
+    lv_obj_t *tape_screen=lv_obj_create(NULL);lv_obj_remove_style_all(tape_screen);
+    lv_obj_set_size(tape_screen,280,240);lv_screen_load(tape_screen);prospector_layouts_init(tape_screen);
+    prospector_layouts_set_style(PROSPECTOR_LAYOUT_TAPE);
+    trace.wpm_value=42;trace.has_dynamic_data=true;prospector_layouts_update(&trace);lv_refr_now(d);
+    static uint8_t tape_reference[sizeof(frame)];memcpy(tape_reference,frame,sizeof(frame));
+    unsigned max_motion_pixels=0,moving_frames=0;
+    for(int k=0;k<90;k++) {
+        if(k==50){trace.wpm_value=0;prospector_layouts_update(&trace);lv_refr_now(d);}
+        unsigned before=flush_count;tape_motion_pixels=0;tape_motion_guard=true;
+        lv_tick_inc(80);host_ticks+=80;lv_timer_handler();lv_refr_now(d);tape_motion_guard=false;
+        if(flush_count>before)moving_frames++;
+        if(tape_motion_pixels>max_motion_pixels)max_motion_pixels=tape_motion_pixels;
+        assert(tape_motion_pixels<280*240/3);
+        for(int side=0;side<2;side++)for(int y=87;y<107;y++)for(int x=52+side*151;x<78+side*151;x++) {
+            unsigned at=(y*280+x)*3;assert(!memcmp(frame+at,tape_reference+at,3));
+        }
+        if(argc>1){char path[1024];snprintf(path,sizeof(path),"%s/tape-motion-%03d.ppm",argv[1],k);FILE*f=fopen(path,"wb");assert(f);fprintf(f,"P6\n280 240\n255\n");fwrite(frame,1,sizeof(frame),f);fclose(f);}
+    }
+    assert(moving_frames>=50&&moving_frames<90);
+    unsigned tape_stopped=flush_count;
+    for(int k=0;k<10;k++){lv_tick_inc(80);host_ticks+=80;lv_timer_handler();lv_refr_now(d);}
+    assert(flush_count==tape_stopped);
+    trace.wpm_value=42;prospector_layouts_update(&trace);
+    for(int k=0;k<20;k++){lv_tick_inc(80);host_ticks+=80;lv_timer_handler();lv_refr_now(d);}
+    trace.has_dynamic_data=false;trace.wpm_value=0;prospector_layouts_update(&trace);
+    concept_layout_reset_history(); /* The scanner bridge clears source history on disconnect. */
+    lv_refr_now(d);unsigned disconnect_frames=0;
+    for(int k=0;k<60;k++) {
+        unsigned before=flush_count;tape_motion_guard=true;tape_motion_pixels=0;
+        lv_tick_inc(80);host_ticks+=80;lv_timer_handler();lv_refr_now(d);tape_motion_guard=false;
+        if(flush_count>before)disconnect_frames++;
+        if(k==0)assert(flush_count>before); /* It must not stop immediately. */
+        if(argc>1){char path[1024];snprintf(path,sizeof(path),"%s/tape-disconnect-%03d.ppm",argv[1],k);FILE*f=fopen(path,"wb");assert(f);fprintf(f,"P6\n280 240\n255\n");fwrite(frame,1,sizeof(frame),f);fclose(f);}
+    }
+    assert(disconnect_frames>20&&disconnect_frames<60);
+    tape_stopped=flush_count;
+    for(int k=0;k<10;k++){lv_tick_inc(80);host_ticks+=80;lv_timer_handler();lv_refr_now(d);}
+    assert(flush_count==tape_stopped);
+    lv_screen_load(parking_screen);prospector_layouts_destroy();lv_obj_delete(tape_screen);
+    lv_tick_inc(80);host_ticks+=80;lv_timer_handler();lv_refr_now(d);
+    printf("TAPE motion: %u moving frames, max %u flushed pixels/frame; stationary battery digits, coast-stop, disconnect inertia and teardown passed\n",moving_frames,max_motion_pixels);
     lv_obj_t *dya_screen=lv_obj_create(NULL);lv_obj_remove_style_all(dya_screen);
     lv_obj_set_size(dya_screen,280,240);prospector_layouts_init(dya_screen);test_dya_contract();
     prospector_layouts_destroy();lv_obj_delete(dya_screen);

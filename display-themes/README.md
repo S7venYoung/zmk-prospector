@@ -165,3 +165,9 @@ TERMINAL uses a scanline title, modifiers and a real 60-second WPM history. It d
 The preview's sampled WPM trace is a host fixture; firmware samples received values only.
 Run `scripts/make-concept-assets.py` to regenerate the cassette and theme font C assets (Pillow required).
 The existing 10µs inverted PWM backlight configuration is retained.
+
+### TAPE motion
+
+The tape window scrolls and the hub teeth rotate on three local LVGL drawing surfaces, at an 80ms timer period. The battery numerals and outer battery sectors remain stationary. Received WPM controls drive speed; acceleration is eased, and both zero WPM and source loss remove drive while retaining momentum. Source-history reset preserves that momentum. Motion damps to rest in approximately three seconds at the 42-WPM host fixture, and resting surfaces stop invalidating. Theme teardown deletes the timer.
+
+The host motion check covers unchanged numeral pixels, local flush bounds (maximum 9024 pixels/frame), coast-to-stop, disconnect with history reset, idle redraw suppression and timer cleanup. These are host results; panel frame timing remains unmeasured.

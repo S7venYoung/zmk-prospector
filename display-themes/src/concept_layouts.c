@@ -20,7 +20,9 @@ LV_IMAGE_DECLARE(tape_cassette_image);
 static lv_obj_t *root, *art, *title, *speed, *output, *icon, *numbers[2], *mods[4];
 static lv_obj_t *vu, *history_obj, *battery_bar[2], *footer;
 static lv_obj_t *tape_keys[4], *tape_lamps[4];
-static lv_timer_t *history_timer;
+static lv_timer_t *history_timer, *tape_timer;
+static lv_obj_t *tape_motion[3];
+static float tape_phase, tape_velocity;
 static prospector_layout_t kind;
 static uint32_t ink, paper, accent, dim;
 static bool ready, valid[2], live;
@@ -97,6 +99,41 @@ static void tape_draw(lv_event_t *e) {
     }
 }
 
+/* Local draw surfaces preserve the static mechanics and battery numerals. */
+static void tape_motion_draw(lv_event_t *e) {
+    lv_obj_t *o=lv_event_get_target(e);lv_area_t a;lv_obj_get_coords(o,&a);
+    lv_layer_t *l=lv_event_get_layer(e);
+    if(o==tape_motion[0]) {
+        for(int side=0;side<2;side++)for(int k=0;k<5;k++) {
+            float shift=fmodf(tape_phase*.45f+k*5.0f,24.0f);
+            /* Mirror the right roll across the window, including texture travel. */
+            int x=a.x1+(side?81-(int)shift:2+(int)shift);
+            int bend=side?-2:2;
+            uint32_t color=k%2?0x615D49:0x8E8467;
+            line(l,x,a.y1+4,x+bend,a.y1+13,color,1);
+            line(l,x+bend,a.y1+13,x+bend,a.y1+24,color,1);
+            line(l,x+bend,a.y1+24,x,a.y1+33,color,1);
+        }
+    } else {
+        int cx=a.x1+27,cy=a.y1+27;
+        circle(l,cx,cy,24,0x1B2018,7);
+        for(int k=0;k<8;k++) {
+            float angle=(tape_phase+k*45)*.01745329252f;
+            line(l,cx+cosf(angle)*21,cy+sinf(angle)*21,
+                 cx+cosf(angle)*25,cy+sinf(angle)*25,0xC6C0A3,3);
+        }
+    }
+}
+static void tape_step(lv_timer_t *timer) {
+    (void)timer;if(!tape_motion[0])return;
+    float target=live&&last_wpm?0.4f+(last_wpm>180?180:last_wpm)*.008f:0.0f;
+    /* Loss of drive still coasts: source reset must not erase momentum. */
+    tape_velocity+=(target-tape_velocity)*(target>tape_velocity?.18f:.10f);
+    if(tape_velocity<.012f){tape_velocity=0;return;}
+    tape_phase=fmodf(tape_phase+tape_velocity,360.0f);
+    for(int i=0;i<3;i++)lv_obj_invalidate(tape_motion[i]);
+}
+
 static void vu_draw(lv_event_t *e) {
     lv_area_t a;lv_obj_get_coords(vu,&a);lv_layer_t *l=lv_event_get_layer(e);
     for(int k=0;k<16;k++)rect(l,a.x1+k*8,a.y1,6,6,k*180<last_wpm*16?accent:0x343B32,true,0);
@@ -161,7 +198,7 @@ static lv_obj_t *bar(int x,int y,int w,int h) {
     lv_bar_set_range(o,0,100);return o;
 }
 lv_obj_t *concept_layout_create(lv_obj_t *parent,prospector_layout_t style) {
-    kind=style;ready=false;layer_name[0]=0;art=title=vu=history_obj=footer=NULL;history_timer=NULL;history_count=history_head=0;live=false;
+    kind=style;tape_timer=NULL;tape_phase=tape_velocity=0;memset(tape_motion,0,sizeof(tape_motion));ready=false;layer_name[0]=0;art=title=vu=history_obj=footer=NULL;history_timer=NULL;history_count=history_head=0;live=false;
     ink=style==PROSPECTOR_LAYOUT_TAPE?0x101510:style==PROSPECTOR_LAYOUT_BLUEPRINT?0x071D2B:0x09150F;
     paper=style==PROSPECTOR_LAYOUT_TAPE?0xD9D3B9:style==PROSPECTOR_LAYOUT_BLUEPRINT?0xB8DCEF:0x9DD98B;
     accent=style==PROSPECTOR_LAYOUT_TAPE?0xE7A245:style==PROSPECTOR_LAYOUT_BLUEPRINT?0xF0B44C:0xAEEA96;
@@ -178,6 +215,10 @@ lv_obj_t *concept_layout_create(lv_obj_t *parent,prospector_layout_t style) {
         label(48,12,158,&lv_font_montserrat_12,paper,"STEREO / DATA DECK");
         lv_obj_t *cassette=lv_image_create(root);lv_image_set_src(cassette,&tape_cassette_image);lv_obj_set_pos(cassette,12,38);
         art=drawing(12,38,256,108,tape_draw);
+        tape_motion[0]=drawing(98,78,84,38,tape_motion_draw);
+        tape_motion[1]=drawing(38,70,54,54,tape_motion_draw);
+        tape_motion[2]=drawing(189,70,54,54,tape_motion_draw);
+        tape_timer=lv_timer_create(tape_step,80,NULL);
         title=label(84,46,112,&FG_Medium_20,0x080A08,"BASE");
         lv_obj_set_style_text_align(title,LV_TEXT_ALIGN_CENTER,0);
         for(int h=0;h<2;h++){numbers[h]=label(44+h*151,81,42,&industrial_battery_32,paper,"--");lv_obj_set_style_text_align(numbers[h],LV_TEXT_ALIGN_CENTER,0);}
@@ -270,6 +311,8 @@ void concept_layout_reset_history(void) {
     if(history_obj)lv_obj_invalidate(history_obj);
 }
 void concept_layout_destroy(void) {
+    if(tape_timer)lv_timer_delete(tape_timer);tape_timer=NULL;
+    memset(tape_motion,0,sizeof(tape_motion));tape_velocity=0;
     if(history_timer)lv_timer_delete(history_timer);history_timer=NULL;
     if(root)lv_obj_delete(root);root=art=title=vu=history_obj=footer=NULL;ready=false;live=false;history_count=history_head=0;
 }
