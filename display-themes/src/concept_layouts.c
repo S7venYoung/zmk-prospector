@@ -105,7 +105,7 @@ static void tape_motion_draw(lv_event_t *e) {
     lv_layer_t *l=lv_event_get_layer(e);
     if(o==tape_motion[0]) {
         for(int side=0;side<2;side++)for(int k=0;k<5;k++) {
-            float shift=fmodf(tape_phase*.45f+k*5.0f,24.0f);
+            float shift=fmodf(tape_phase*.25f+k*5.0f,24.0f);
             /* Mirror the right roll across the window, including texture travel. */
             int x=a.x1+(side?81-(int)shift:2+(int)shift);
             int bend=side?-2:2;
@@ -126,10 +126,11 @@ static void tape_motion_draw(lv_event_t *e) {
 }
 static void tape_step(lv_timer_t *timer) {
     (void)timer;if(!tape_motion[0])return;
-    float target=live&&last_wpm?0.4f+(last_wpm>180?180:last_wpm)*.008f:0.0f;
+    /* Five times the original hub speed; texture travel stays below aliasing. */
+    float target=live&&last_wpm?2.0f+(last_wpm>180?180:last_wpm)*.04f:0.0f;
     /* Loss of drive still coasts: source reset must not erase momentum. */
     tape_velocity+=(target-tape_velocity)*(target>tape_velocity?.18f:.10f);
-    if(tape_velocity<.012f){tape_velocity=0;return;}
+    if(tape_velocity<.06f){tape_velocity=0;return;}
     tape_phase=fmodf(tape_phase+tape_velocity,360.0f);
     for(int i=0;i<3;i++)lv_obj_invalidate(tape_motion[i]);
 }
