@@ -119,7 +119,7 @@ static int verify_modifiers(lv_obj_t *o, uint8_t flags, int style) {
             if (style==5) assert(lv_color_eq(lv_obj_get_style_bg_color(lv_obj_get_parent(o), 0),
                 lv_color_hex(active ? 0xFFCA13 : 0x1B2420)));
             assert(lv_color_eq(lv_obj_get_style_text_color(o, 0),
-                lv_color_hex(style>=10 ? (active ? (style==10?0xE7A245:style==11?0xF0B44C:0xAEEA96) : (style==10?0x66705F:style==11?0x5D8198:0x326845)) : style>=7 ? (active ? (style==9?0xFF913F:style==8?0x74EAF4:0x27E4F2) : (style==7?0x6A7D8B:0x747779)) : style==6 ? (active ? 0xFFB91D : 0x65635A) : (active ? 0x0D1310 : 0x777C76))));
+                lv_color_hex(style>=10 ? (active ? (style==10?0xE7A245:style==11?0xF0B44C:0xAEEA96) : (style==10?0x9B9C89:style==11?0x5D8198:0x326845)) : style>=7 ? (active ? (style==9?0xFF913F:style==8?0x74EAF4:0x27E4F2) : (style==7?0x6A7D8B:0x747779)) : style==6 ? (active ? 0xFFB91D : 0x65635A) : (active ? 0x0D1310 : 0x777C76))));
             found++;
         }
     }
@@ -220,7 +220,7 @@ int main(int argc,char **argv) {
                 }
                 for(int t=0;t<5;t++){host_ticks+=100;lv_tick_inc(100);lv_timer_handler();}
                 lv_obj_update_layout(screen);text_count=0;inspect(screen,names[style-1]);check_overlaps(names[style-1]);
-                if(style>=5)assert(verify_connection_icon(screen,data.usb_connected?LV_SYMBOL_USB:data.ble_connected?LV_SYMBOL_BLUETOOTH:LV_SYMBOL_CLOSE)==1);
+                if(style>=5)assert(verify_connection_icon(screen,data.usb_connected?LV_SYMBOL_USB:data.ble_connected?LV_SYMBOL_BLUETOOTH:LV_SYMBOL_CLOSE)==(style==10?0:1));
                 if(style>=5)assert(verify_modifiers(screen,data.modifier_flags,style)==4);
                 if(style==7) {
                     lv_obj_t *dash=lv_obj_get_child(screen,0);int gauges=0;
@@ -246,12 +246,12 @@ int main(int argc,char **argv) {
                     lv_refr_now(d);char path[1024];snprintf(path,sizeof(path),"%s/%s-%d.ppm",argv[1],names[style-1],state);
                     FILE*f=fopen(path,"wb");fprintf(f,"P6\n280 240\n255\n");fwrite(frame,1,sizeof(frame),f);fclose(f);
                 }
-                if(style==8&&palette==0&&state==1) {
+                if((style==8||style==10)&&palette==0&&state==1) {
                     const char *short_names[]={"SYS","NAV"};
                     for(int k=0;k<2;k++) {
-                        dashboard_layout_update(&data,short_names[k]);lv_obj_update_layout(screen);
-                        text_count=0;inspect(screen,"split");check_overlaps("split");lv_refr_now(d);
-                        if(argc>1){char path[1024];snprintf(path,sizeof(path),"%s/split-%s.ppm",argv[1],short_names[k]);FILE*f=fopen(path,"wb");assert(f);fprintf(f,"P6\n280 240\n255\n");fwrite(frame,1,sizeof(frame),f);fclose(f);}
+                        if(style==8)dashboard_layout_update(&data,short_names[k]);else concept_layout_update(&data,short_names[k]);lv_obj_update_layout(screen);
+                        text_count=0;inspect(screen,names[style-1]);check_overlaps(names[style-1]);lv_refr_now(d);
+                        if(argc>1){char path[1024];snprintf(path,sizeof(path),"%s/%s-%s.ppm",argv[1],names[style-1],short_names[k]);FILE*f=fopen(path,"wb");assert(f);fprintf(f,"P6\n280 240\n255\n");fwrite(frame,1,sizeof(frame),f);fclose(f);}
                     }
                 }
             }

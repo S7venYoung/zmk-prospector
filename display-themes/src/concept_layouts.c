@@ -10,6 +10,7 @@
 #include <string.h>
 LV_FONT_DECLARE(impact_16);
 LV_FONT_DECLARE(impact_20);
+LV_FONT_DECLARE(industrial_battery_32);
 LV_FONT_DECLARE(industrial_numeric_32);
 LV_FONT_DECLARE(blueprint_title_40);
 LV_FONT_DECLARE(blueprint_numeric_32);
@@ -18,6 +19,7 @@ LV_IMAGE_DECLARE(tape_cassette_image);
 
 static lv_obj_t *root, *art, *title, *speed, *output, *icon, *numbers[2], *mods[4];
 static lv_obj_t *vu, *history_obj, *battery_bar[2], *footer;
+static lv_obj_t *tape_keys[4], *tape_lamps[4];
 static lv_timer_t *history_timer;
 static prospector_layout_t kind;
 static uint32_t ink, paper, accent, dim;
@@ -57,22 +59,47 @@ static lv_obj_t *drawing(int x,int y,int w,int h,lv_event_cb_t cb) {
     lv_obj_remove_flag(o,LV_OBJ_FLAG_CLICKABLE|LV_OBJ_FLAG_SCROLLABLE);lv_obj_add_flag(o,LV_OBJ_FLAG_USER_1);
     lv_obj_add_event_cb(o,cb,LV_EVENT_DRAW_MAIN,NULL);return o;
 }
+static void tape_player_draw(lv_event_t *e) {
+    lv_layer_t *l=lv_event_get_layer(e);
+    /* One rounded brushed-metal chassis surrounds both the tape well and controls. */
+    rect(l,4,4,272,232,0x454A3D,true,38);
+    rect(l,5,5,270,230,0xBBB49A,false,37);
+    rect(l,8,8,264,224,0x222820,true,34);
+    for(int y=12;y<229;y+=3) {
+        int inset=y<30?38:y>213?33:12;
+        line(l,inset,y,279-inset,y,0x2A3027,1);
+    }
+    rect(l,8,33,264,119,0x0B100C,true,12);
+    rect(l,8,33,264,119,0x777B63,false,12);
+    line(l,20,154,260,154,0x10150F,2);
+    line(l,20,156,260,156,0x626650,1);
+    rect(l,19,159,91,39,0x10170F,true,4);
+    rect(l,19,159,91,39,0x6B7255,false,4);
+    line(l,118,176,251,176,0x73775C,1);
+    line(l,20,199,260,199,0x11160F,2);
+    for(int side=0;side<2;side++) {
+        int x=24+side*232;
+        circle(l,x,21,3,0x9B9C89,1);line(l,x-1,20,x+1,22,0x9B9C89,1);
+        circle(l,x,218,2,0x73775C,1);
+    }
+    for(int x=215;x<249;x+=5)line(l,x,16,x,25,0x10150F,2);
+}
 static void tape_draw(lv_event_t *e) {
     lv_area_t a;lv_obj_get_coords(art,&a);int x=a.x1,y=a.y1;lv_layer_t *l=lv_event_get_layer(e);
     /* Reel sectors sit on the original mechanical artwork; values remain live. */
     for(int h=0;h<2;h++) {
-        int cx=x+61+h*118,cy=y+62;
+        int cx=x+53+h*151,cy=y+59;
         for(int k=0;k<16;k++) {
             float r=(h? -78+k*11:102+k*11)*0.01745329252f;
             uint32_t c=valid[h]&&k*100<levels[h]*16?(h?0xA5B963:accent):0x353B33;
-            line(l,cx+cosf(r)*31,cy+sinf(r)*31,cx+cosf(r)*40,cy+sinf(r)*40,c,4);
+            line(l,cx+cosf(r)*36,cy+sinf(r)*36,cx+cosf(r)*45,cy+sinf(r)*45,c,5);
         }
     }
 }
 
 static void vu_draw(lv_event_t *e) {
     lv_area_t a;lv_obj_get_coords(vu,&a);lv_layer_t *l=lv_event_get_layer(e);
-    for(int k=0;k<16;k++)rect(l,a.x1+k*7,a.y1,5,6,k*180<last_wpm*16?accent:0x343B32,true,0);
+    for(int k=0;k<16;k++)rect(l,a.x1+k*8,a.y1,6,6,k*180<last_wpm*16?accent:0x343B32,true,0);
 }
 static void blueprint_grid(lv_event_t *e) {
     lv_layer_t *l=lv_event_get_layer(e);
@@ -135,22 +162,37 @@ static lv_obj_t *bar(int x,int y,int w,int h) {
 }
 lv_obj_t *concept_layout_create(lv_obj_t *parent,prospector_layout_t style) {
     kind=style;ready=false;layer_name[0]=0;art=title=vu=history_obj=footer=NULL;history_timer=NULL;history_count=history_head=0;live=false;
-    ink=style==PROSPECTOR_LAYOUT_TAPE?0x171D17:style==PROSPECTOR_LAYOUT_BLUEPRINT?0x071D2B:0x09150F;
+    ink=style==PROSPECTOR_LAYOUT_TAPE?0x101510:style==PROSPECTOR_LAYOUT_BLUEPRINT?0x071D2B:0x09150F;
     paper=style==PROSPECTOR_LAYOUT_TAPE?0xD9D3B9:style==PROSPECTOR_LAYOUT_BLUEPRINT?0xB8DCEF:0x9DD98B;
     accent=style==PROSPECTOR_LAYOUT_TAPE?0xE7A245:style==PROSPECTOR_LAYOUT_BLUEPRINT?0xF0B44C:0xAEEA96;
-    dim=style==PROSPECTOR_LAYOUT_TAPE?0x66705F:style==PROSPECTOR_LAYOUT_BLUEPRINT?0x5D8198:0x326845;
+    dim=style==PROSPECTOR_LAYOUT_TAPE?0x9B9C89:style==PROSPECTOR_LAYOUT_BLUEPRINT?0x5D8198:0x326845;
     root=panel(parent,0,0,280,240,ink,0);
     if(kind==PROSPECTOR_LAYOUT_BLUEPRINT)lv_obj_add_event_cb(root,blueprint_grid,LV_EVENT_DRAW_MAIN,NULL);
-    label(24,17,103,&impact_16,paper,"CORNE");
-    icon=connection_icon_create(root,205,15,paper);output=label(229,18,31,&impact_16,paper,"OFF");
+    if(kind==PROSPECTOR_LAYOUT_TAPE)lv_obj_add_event_cb(root,tape_player_draw,LV_EVENT_DRAW_MAIN,NULL);
+    icon=output=NULL;
+    if(kind!=PROSPECTOR_LAYOUT_TAPE) {
+        label(24,17,103,&impact_16,paper,"CORNE");
+        icon=connection_icon_create(root,205,15,paper);output=label(229,18,31,&impact_16,paper,"OFF");
+    }
     if(kind==PROSPECTOR_LAYOUT_TAPE) {
-        lv_obj_t *cassette=lv_image_create(root);lv_image_set_src(cassette,&tape_cassette_image);lv_obj_set_pos(cassette,20,35);
-        art=drawing(20,35,240,136,tape_draw);
-        title=label(99,58,82,&impact_20,ink,"BASE");
+        label(48,12,158,&lv_font_montserrat_12,paper,"STEREO / DATA DECK");
+        lv_obj_t *cassette=lv_image_create(root);lv_image_set_src(cassette,&tape_cassette_image);lv_obj_set_pos(cassette,12,38);
+        art=drawing(12,38,256,108,tape_draw);
+        title=label(84,46,112,&FG_Medium_20,0x080A08,"BASE");
         lv_obj_set_style_text_align(title,LV_TEXT_ALIGN_CENTER,0);
-        for(int h=0;h<2;h++){numbers[h]=label(63+h*118,87,36,&impact_20,paper,"--");lv_obj_set_style_text_align(numbers[h],LV_TEXT_ALIGN_CENTER,0);}
-        speed=label(23,177,62,&industrial_numeric_32,paper,"0");label(88,188,43,&impact_16,paper,"WPM");
-        vu=drawing(22,216,112,6,vu_draw);make_mods(181,172,15,true);
+        for(int h=0;h<2;h++){numbers[h]=label(44+h*151,81,42,&industrial_battery_32,paper,"--");lv_obj_set_style_text_align(numbers[h],LV_TEXT_ALIGN_CENTER,0);}
+        speed=label(27,160,76,&industrial_numeric_32,paper,"0");lv_obj_set_style_text_align(speed,LV_TEXT_ALIGN_RIGHT,0);
+        label(118,158,43,&impact_16,paper,"WPM");
+        vu=drawing(118,182,128,6,vu_draw);
+        const char *tags[]={"CMD","OPT","CTRL","SHIFT"};
+        for(int i=0;i<4;i++) {
+            tape_keys[i]=panel(root,30+i*55,203,50,25,0x161D15,3);
+            lv_obj_set_style_border_color(tape_keys[i],lv_color_hex(0x71765D),0);
+            lv_obj_set_style_border_width(tape_keys[i],1,0);
+            tape_lamps[i]=panel(root,36+i*55,206,6,3,dim,1);
+            mods[i]=label(33+i*55,212,44,&impact_16,dim,tags[i]);
+            lv_obj_set_style_text_align(mods[i],LV_TEXT_ALIGN_CENTER,0);
+        }
     } else if(kind==PROSPECTOR_LAYOUT_BLUEPRINT) {
         /* Header is a drafting label, not a repeated dashboard strip. */
         lv_obj_add_flag(lv_obj_get_child(root,0),LV_OBJ_FLAG_HIDDEN);
@@ -185,9 +227,9 @@ void concept_layout_update(const struct prospector_keyboard_data *d,const char *
         strcpy(layer_name,text);
         if(footer){snprintf(footer_text,sizeof(footer_text),"LAYER: %s",text);lv_label_set_text_static(footer,footer_text);}
         if(title) {
-            const lv_font_t *font=kind==PROSPECTOR_LAYOUT_TAPE?&impact_20:kind==PROSPECTOR_LAYOUT_BLUEPRINT?&blueprint_title_40:&terminal_title_52;
+            const lv_font_t *font=kind==PROSPECTOR_LAYOUT_TAPE?&FG_Medium_20:kind==PROSPECTOR_LAYOUT_BLUEPRINT?&blueprint_title_40:&terminal_title_52;
             lv_point_t size;lv_text_get_size(&size,text,font,0,0,LV_COORD_MAX,0);
-            if(size.x>(kind==PROSPECTOR_LAYOUT_TAPE?82:kind==PROSPECTOR_LAYOUT_BLUEPRINT?147:139))font=&impact_16;
+            if(size.x>(kind==PROSPECTOR_LAYOUT_TAPE?112:kind==PROSPECTOR_LAYOUT_BLUEPRINT?147:139))font=&impact_16;
             lv_obj_set_style_text_font(title,font,0);lv_obj_set_height(title,font->line_height);lv_label_set_text(title,text);
         } else lv_obj_invalidate(art);
     }
@@ -196,8 +238,8 @@ void concept_layout_update(const struct prospector_keyboard_data *d,const char *
         if(vu)lv_obj_invalidate(vu);
     }
     uint8_t out=d->usb_connected?2:d->ble_connected?1:0;
-    if(!ready||out!=last_out){last_out=out;strcpy(output_text,out==2?"USB":out?"BLE":"OFF");lv_label_set_text_static(output,output_text);}
-    connection_icon_update(icon,d->usb_connected,d->ble_connected);
+    if(!ready||out!=last_out){last_out=out;if(output){strcpy(output_text,out==2?"USB":out?"BLE":"OFF");lv_label_set_text_static(output,output_text);}}
+    if(icon)connection_icon_update(icon,d->usb_connected,d->ble_connected);
     for(int h=0;h<2;h++) {
         uint8_t value=h?d->peripheral_battery[0]:d->battery_level;
         bool ok=d->has_dynamic_data&&value>0&&value<=100;
@@ -211,6 +253,11 @@ void concept_layout_update(const struct prospector_keyboard_data *d,const char *
     const uint8_t masks[]={0x88,0x44,0x11,0x22};
     for(int i=0;i<4;i++)if(!ready||!!(last_mods&masks[i])!=!!(d->modifier_flags&masks[i])) {
         lv_obj_set_style_text_color(mods[i],lv_color_hex(d->modifier_flags&masks[i]?accent:dim),0);
+        if(kind==PROSPECTOR_LAYOUT_TAPE) {
+            bool active=(d->modifier_flags&masks[i])!=0;
+            lv_obj_set_style_bg_color(tape_keys[i],lv_color_hex(active?0x51442C:0x161D15),0);
+            lv_obj_set_style_bg_color(tape_lamps[i],lv_color_hex(active?accent:0x404938),0);
+        }
         if(kind==PROSPECTOR_LAYOUT_TERMINAL) {
             lv_obj_set_style_bg_color(mods[i],lv_color_hex(0x235530),0);
             lv_obj_set_style_bg_opa(mods[i],d->modifier_flags&masks[i]?LV_OPA_COVER:LV_OPA_TRANSP,0);
