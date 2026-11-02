@@ -29,6 +29,15 @@ static bool ready, valid[2], live;
 static uint8_t levels[2], last_wpm, last_mods, last_out;
 static char footer_text[40], layer_name[32], speed_text[4], output_text[4], number_text[2][4];
 static uint8_t history[60], history_count, history_head;
+/* Muted material colours remain visible at rest; bright lamps mean held keys. */
+static const struct {
+    uint32_t idle_bg, held_bg, idle_text, held_text, idle_edge, held_edge;
+} tape_key_colors[4]={
+    {0x372A1B,0x765021,0xB99A6B,0xFFD181,0x886A41,0xFFBC58}, /* CMD: amber */
+    {0x1B3433,0x28675B,0x7FB9AD,0xB8F2DF,0x507F75,0x8EDEC7}, /* OPT: teal */
+    {0x222F40,0x355679,0x8CA7C9,0xD2E5FF,0x557198,0x96C4F4}, /* CTRL: blue */
+    {0x3B2525,0x754239,0xC68D83,0xFFD4C8,0x8A5D55,0xF6AB99}, /* SHIFT: brick */
+};
 
 static lv_obj_t *panel(lv_obj_t *parent,int x,int y,int w,int h,uint32_t color,int radius) {
     lv_obj_t *o=lv_obj_create(parent);lv_obj_remove_style_all(o);
@@ -232,7 +241,8 @@ lv_obj_t *concept_layout_create(lv_obj_t *parent,prospector_layout_t style) {
             lv_obj_set_style_border_color(tape_keys[i],lv_color_hex(0x71765D),0);
             lv_obj_set_style_border_width(tape_keys[i],1,0);
             tape_lamps[i]=panel(root,36+i*55,206,6,3,dim,1);
-            mods[i]=label(33+i*55,212,44,&impact_16,dim,tags[i]);
+            /* Centre the 16px line box inside the 25px keycap; keep bottom clearance. */
+            mods[i]=label(33+i*55,207,44,&impact_16,dim,tags[i]);
             lv_obj_set_style_text_align(mods[i],LV_TEXT_ALIGN_CENTER,0);
         }
     } else if(kind==PROSPECTOR_LAYOUT_BLUEPRINT) {
@@ -294,11 +304,13 @@ void concept_layout_update(const struct prospector_keyboard_data *d,const char *
     }
     const uint8_t masks[]={0x88,0x44,0x11,0x22};
     for(int i=0;i<4;i++)if(!ready||!!(last_mods&masks[i])!=!!(d->modifier_flags&masks[i])) {
-        lv_obj_set_style_text_color(mods[i],lv_color_hex(d->modifier_flags&masks[i]?accent:dim),0);
+        if(kind!=PROSPECTOR_LAYOUT_TAPE)lv_obj_set_style_text_color(mods[i],lv_color_hex(d->modifier_flags&masks[i]?accent:dim),0);
         if(kind==PROSPECTOR_LAYOUT_TAPE) {
             bool active=(d->modifier_flags&masks[i])!=0;
-            lv_obj_set_style_bg_color(tape_keys[i],lv_color_hex(active?0x51442C:0x161D15),0);
-            lv_obj_set_style_bg_color(tape_lamps[i],lv_color_hex(active?accent:0x404938),0);
+            lv_obj_set_style_text_color(mods[i],lv_color_hex(active?tape_key_colors[i].held_text:tape_key_colors[i].idle_text),0);
+            lv_obj_set_style_bg_color(tape_keys[i],lv_color_hex(active?tape_key_colors[i].held_bg:tape_key_colors[i].idle_bg),0);
+            lv_obj_set_style_border_color(tape_keys[i],lv_color_hex(active?tape_key_colors[i].held_edge:tape_key_colors[i].idle_edge),0);
+            lv_obj_set_style_bg_color(tape_lamps[i],lv_color_hex(active?tape_key_colors[i].held_text:0x121811),0);
         }
         if(kind==PROSPECTOR_LAYOUT_TERMINAL) {
             lv_obj_set_style_bg_color(mods[i],lv_color_hex(0x235530),0);

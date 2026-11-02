@@ -124,7 +124,11 @@ static int verify_modifiers(lv_obj_t *o, uint8_t flags, int style) {
             bool active = (flags & masks[i]) != 0;
             if (style==5) assert(lv_color_eq(lv_obj_get_style_bg_color(lv_obj_get_parent(o), 0),
                 lv_color_hex(active ? 0xFFCA13 : 0x1B2420)));
-            assert(lv_color_eq(lv_obj_get_style_text_color(o, 0),
+            if(style==10) {
+                const uint32_t idle[]={0xB99A6B,0x7FB9AD,0x8CA7C9,0xC68D83};
+                const uint32_t held[]={0xFFD181,0xB8F2DF,0xD2E5FF,0xFFD4C8};
+                assert(lv_color_eq(lv_obj_get_style_text_color(o,0),lv_color_hex(active?held[i]:idle[i])));
+            } else assert(lv_color_eq(lv_obj_get_style_text_color(o, 0),
                 lv_color_hex(style>=10 ? (active ? (style==10?0xE7A245:style==11?0xF0B44C:0xAEEA96) : (style==10?0x9B9C89:style==11?0x5D8198:0x326845)) : style>=7 ? (active ? (style==9?0xFF913F:style==8?0x74EAF4:0x27E4F2) : (style==7?0x6A7D8B:0x747779)) : style==6 ? (active ? 0xFFB91D : 0x65635A) : (active ? 0x0D1310 : 0x777C76))));
             found++;
         }
@@ -251,6 +255,14 @@ int main(int argc,char **argv) {
                 if(palette==0&&argc>1) {
                     lv_refr_now(d);char path[1024];snprintf(path,sizeof(path),"%s/%s-%d.ppm",argv[1],names[style-1],state);
                     FILE*f=fopen(path,"wb");fprintf(f,"P6\n280 240\n255\n");fwrite(frame,1,sizeof(frame),f);fclose(f);
+                }
+                if(style==10&&palette==0&&state==1) {
+                    const uint8_t keys[]={0,0xff};const char *cases[]={"idle","held"};
+                    for(int k=0;k<2;k++) {
+                        data.modifier_flags=keys[k];concept_layout_update(&data,"BASE");lv_refr_now(d);
+                        assert(verify_modifiers(screen,data.modifier_flags,style)==4);
+                        if(argc>1){char path[1024];snprintf(path,sizeof(path),"%s/tape-keys-%s.ppm",argv[1],cases[k]);FILE*f=fopen(path,"wb");assert(f);fprintf(f,"P6\n280 240\n255\n");fwrite(frame,1,sizeof(frame),f);fclose(f);}
+                    }
                 }
                 if((style==8||style==10)&&palette==0&&state==1) {
                     const char *short_names[]={"SYS","NAV"};
