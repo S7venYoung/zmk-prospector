@@ -15,12 +15,3 @@ config ZMK_KEY_STATS_SAVE_PRESS_INTERVAL
     default 50
     depends on ZMK_KEY_STATS
 rsource "modules/zmk-feature-runtime-macro/Kconfig"
-
-config PROSPECTOR_DYA_BOOTLOADER_ACTION
-    bool "Treat Studio Bootloader selection as an immediate bootloader action"
-    depends on ZMK_STUDIO && ZMK_PROSPECTOR_DYA_SETTINGS && RETENTION_BOOT_MODE
-    select REBOOT
-    help
-      Selecting Bootloader in DYA consumes the edit and enters the local
-      device bootloader after a 500ms response grace period. Key bindings,
-      settings and pairing information are not erased or changed.
