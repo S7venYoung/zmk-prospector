@@ -138,6 +138,6 @@ GitHub Actions 工作流只接受 **workflow_dispatch**，提交和 PR 不会触
 
 实现与上游版本见 [移植说明](display-themes/README.md)。
 
-## DYA Bootloader action
+## DYA Devtool Bootloader
 
-Choosing Bootloader in DYA enters the connected device bootloader after a 500ms response grace period, without persisting the edit or clearing bonds. See [usage and validation](docs/DYA_BOOTLOADER.md).
+Open the bottom-right Devtool panel and click **Bootloader**. This uses the native `cormoran__devtool` RPC and enters the connected device bootloader after a 250ms response grace period. No keymap edit or key selection is required. See [usage and validation](docs/DYA_BOOTLOADER.md).
