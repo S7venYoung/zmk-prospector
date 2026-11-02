@@ -169,7 +169,7 @@ west build -s "$workspace_dir/zmk/app" -d "$workspace_dir/build-my-keyboard-dong
 3. DYA 读取到完整 keymap，改键与 Save/重启恢复正确。
 4. 修饰键、USB/BLE 输出状态、WPM 与实际键盘行为一致。
 5. 左右电量来源正确；有需要再交换 `left_hand_slot/right_hand_slot`。
-6. 选择九个主题，核对长层名、三位数 WPM、未知电量及 MONO 曲线。
+6. 选择十二个主题，核对长层名、三位数 WPM、未知电量及 MONO 曲线。
 
 换主题不需要清空蓝牙配对。是否需要更新绑定，要根据真实连接状态决定，不能把刷
 settings reset 当作引用主题的固定步骤。

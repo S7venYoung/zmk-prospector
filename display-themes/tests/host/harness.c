@@ -12,6 +12,7 @@
 #include "industrial_layout.h"
 #include "segment_layout.h"
 #include "dashboard_layouts.h"
+#include "concept_layouts.h"
 #include "fonts_carrefinho.h"
 
 uint32_t host_ticks;
@@ -30,10 +31,16 @@ void yads_input_text(uint8_t layer,const char *name,char out[32]) {
 }
 extern void test_dya_contract(void);
 static unsigned flush_count;
+static bool tape_motion_guard;
+static unsigned tape_motion_pixels;
 static uint8_t frame[280 * 240 * 3];
 static uint8_t draw_buf[280 * 32 * 3] __attribute__((aligned(64)));
 static void flush(lv_display_t *d, const lv_area_t *a, uint8_t *p) {
     flush_count++;
+    if(tape_motion_guard) {
+        assert(a->x1>=36&&a->x2<=245&&a->y1>=68&&a->y2<=126);
+        tape_motion_pixels+=(a->x2-a->x1+1)*(a->y2-a->y1+1);
+    }
     for (int y=a->y1;y<=a->y2;y++) for(int x=a->x1;x<=a->x2;x++) {
         /* LVGL RGB888 memory order is B,G,R. */
         unsigned src=((y-a->y1)*(a->x2-a->x1+1)+(x-a->x1))*3;
@@ -77,6 +84,20 @@ static void inspect(lv_obj_t *o,const char *theme) {
         const char *text=lv_label_get_text(o);
         if(text && *text && lv_obj_get_style_text_opa(o,0)>0) {
             lv_area_t a;lv_obj_get_coords(o,&a);inspected++;
+            if(!strcmp(theme,"split")&&(!strcmp(text,"SYS")||!strcmp(text,"NAV"))) {
+                const lv_font_t *font=lv_obj_get_style_text_font(o,0);
+                lv_point_t size;lv_text_get_size(&size,text,font,0,0,LV_COORD_MAX,0);
+                assert(font->line_height>=70&&size.x<=lv_obj_get_width(o));
+                for(const char *c=text;*c;c++) {
+                    lv_font_glyph_dsc_t glyph;assert(lv_font_get_glyph_dsc(font,&glyph,*c,0));
+                    assert(glyph.box_h>40);
+                }
+            }
+
+            if((!strcmp(theme,"tape")||!strcmp(theme,"blueprint")||!strcmp(theme,"terminal"))&&!strcmp(text,"WPM")) {
+                lv_point_t size;lv_text_get_size(&size,text,lv_obj_get_style_text_font(o,0),0,0,LV_COORD_MAX,0);
+                assert(size.x<=lv_obj_get_width(o));
+            }
             if(text_count<64){text_regions[text_count].area=a;text_regions[text_count++].text=text;}
             for (lv_obj_t *p=lv_obj_get_parent(o);p;p=lv_obj_get_parent(p)) {
                 if (lv_obj_has_flag(p,LV_OBJ_FLAG_OVERFLOW_VISIBLE)) continue;
@@ -94,7 +115,7 @@ static void inspect(lv_obj_t *o,const char *theme) {
     for(uint32_t i=0;i<lv_obj_get_child_count(o);i++)inspect(lv_obj_get_child(o,i),theme);
 }
 static int verify_modifiers(lv_obj_t *o, uint8_t flags, int style) {
-    const char *symbols[] = {SYMBOL_COMMAND, SYMBOL_OPTION, SYMBOL_CONTROL, SYMBOL_SHIFT};
+    const char *symbols[] = {style>=10?"CMD":SYMBOL_COMMAND, style>=10?"OPT":SYMBOL_OPTION, style>=10?"CTRL":SYMBOL_CONTROL, style>=10?"SHIFT":SYMBOL_SHIFT};
     const uint8_t masks[] = {0x88, 0x44, 0x11, 0x22};
     int found = 0;
     if (lv_obj_check_type(o, &lv_label_class)) {
@@ -102,8 +123,12 @@ static int verify_modifiers(lv_obj_t *o, uint8_t flags, int style) {
             bool active = (flags & masks[i]) != 0;
             if (style==5) assert(lv_color_eq(lv_obj_get_style_bg_color(lv_obj_get_parent(o), 0),
                 lv_color_hex(active ? 0xFFCA13 : 0x1B2420)));
-            assert(lv_color_eq(lv_obj_get_style_text_color(o, 0),
-                lv_color_hex(style>=7 ? (active ? (style==9?0xFF913F:style==8?0x74EAF4:0x27E4F2) : (style==7?0x6A7D8B:0x747779)) : style==6 ? (active ? 0xFFB91D : 0x65635A) : (active ? 0x0D1310 : 0x777C76))));
+            if(style==10) {
+                const uint32_t idle[]={0xB99A6B,0x7FB9AD,0x8CA7C9,0xC68D83};
+                const uint32_t held[]={0xFFD181,0xB8F2DF,0xD2E5FF,0xFFD4C8};
+                assert(lv_color_eq(lv_obj_get_style_text_color(o,0),lv_color_hex(active?held[i]:idle[i])));
+            } else assert(lv_color_eq(lv_obj_get_style_text_color(o, 0),
+                lv_color_hex(style>=10 ? (active ? (style==10?0xE7A245:style==11?0xF0B44C:0xAEEA96) : (style==10?0x9B9C89:style==11?0x5D8198:0x326845)) : style>=7 ? (active ? (style==9?0xFF913F:style==8?0x74EAF4:0x27E4F2) : (style==7?0x6A7D8B:0x747779)) : style==6 ? (active ? 0xFFB91D : 0x65635A) : (active ? 0x0D1310 : 0x777C76))));
             found++;
         }
     }
@@ -133,17 +158,17 @@ int main(int argc,char **argv) {
     lv_obj_t *cycle_screen=lv_obj_create(NULL);lv_obj_remove_style_all(cycle_screen);
     lv_obj_set_size(cycle_screen,280,240);prospector_layouts_init(cycle_screen);
     prospector_layouts_set_style(PROSPECTOR_LAYOUT_FIELD);
-    for(int n=0;n<45;n++) {
-        int expected=(n%9)+1;assert(prospector_layouts_get_style()==expected);
+    for(int n=0;n<60;n++) {
+        int expected=(n%12)+1;assert(prospector_layouts_get_style()==expected);
         prospector_layouts_next();
     }
-    for(int n=0;n<45;n++) {
-        prospector_layouts_prev();int expected=9-(n%9);
+    for(int n=0;n<60;n++) {
+        prospector_layouts_prev();int expected=12-(n%12);
         assert(prospector_layouts_get_style()==expected);
     }
     prospector_layouts_destroy();lv_obj_delete(cycle_screen);
-    const char *names[]={"field","operator","radii","yads","industrial","segment","orbit","split","mono"};
-    for(int style=1;style<=9;style++) {
+    const char *names[]={"field","operator","radii","yads","industrial","segment","orbit","split","mono","tape","blueprint","terminal"};
+    for(int style=1;style<=12;style++) {
         lv_obj_t *screen=lv_obj_create(NULL);lv_obj_remove_style_all(screen);
         lv_obj_set_size(screen,280,240);lv_obj_set_style_bg_opa(screen,255,0);
         lv_obj_set_style_bg_color(screen,lv_color_black(),0);lv_screen_load(screen);
@@ -154,7 +179,7 @@ int main(int argc,char **argv) {
                     .wpm_value=state*40,.battery_level=state==5?100:state==4?1:state?85:0,.peripheral_battery={state==5?100:state==4?1:state==2?0:72,0,0},
                     .modifier_flags=palette==0&&state==1?0xff:(palette*6+state)%16,.profile_slot=state%5,.usb_connected=state==1,
                     .ble_connected=state==2,.ble_bonded=state>1,.has_dynamic_data=true};
-                memcpy(data.current_layer_name,state==3?"WWWWWWWW":"BASE",8);
+                if(state==3)memcpy(data.current_layer_name,"WWWWWWWW",8);else memcpy(data.current_layer_name,"BASE",5);
                 if(style>=5 && (palette & 1)) data.modifier_flags <<= 4;
                 if(style>=5 && state==1) {
                     data.active_layer=0; data.wpm_value=42; data.ble_connected=true;
@@ -169,13 +194,14 @@ int main(int argc,char **argv) {
                     if(style==3)radii_layout_update(9,"VERY_LONG_LAYER_NAME",85,true,72,true,data.modifier_flags,false,3);
                     if(style==5)industrial_layout_update(&data,"VERY_LONG_LAYER_NAME");
                     if(style==6)segment_layout_update(&data,"VERY_LONG_LAYER_NAME");
-                    if(style>=7)dashboard_layout_update(&data,"VERY_LONG_LAYER_NAME");
+                    if(style>=7&&style<=9)dashboard_layout_update(&data,"VERY_LONG_LAYER_NAME");
+                    if(style>=10)concept_layout_update(&data,"VERY_LONG_LAYER_NAME");
                     /* Palette changes must preserve the full DYA layer name. */
                     for(int repeat=0;repeat<4;repeat++)prospector_layouts_cycle_palette();
                 }
                 for(int t=0;t<5;t++){host_ticks+=100;lv_tick_inc(100);lv_timer_handler();}
                 lv_obj_update_layout(screen);text_count=0;inspect(screen,names[style-1]);check_overlaps(names[style-1]);
-                if(style>=5)assert(verify_connection_icon(screen,data.usb_connected?LV_SYMBOL_USB:data.ble_connected?LV_SYMBOL_BLUETOOTH:LV_SYMBOL_CLOSE)==1);
+                if(style>=5)assert(verify_connection_icon(screen,data.usb_connected?LV_SYMBOL_USB:data.ble_connected?LV_SYMBOL_BLUETOOTH:LV_SYMBOL_CLOSE)==(style==10?0:1));
                 if(style>=5)assert(verify_modifiers(screen,data.modifier_flags,style)==4);
                 if(style==7) {
                     lv_obj_t *dash=lv_obj_get_child(screen,0);int gauges=0;
@@ -200,6 +226,22 @@ int main(int argc,char **argv) {
                 if(palette==0&&argc>1) {
                     lv_refr_now(d);char path[1024];snprintf(path,sizeof(path),"%s/%s-%d.ppm",argv[1],names[style-1],state);
                     FILE*f=fopen(path,"wb");fprintf(f,"P6\n280 240\n255\n");fwrite(frame,1,sizeof(frame),f);fclose(f);
+                }
+                if(style==10&&palette==0&&state==1) {
+                    const uint8_t keys[]={0,0xff};const char *cases[]={"idle","held"};
+                    for(int k=0;k<2;k++) {
+                        data.modifier_flags=keys[k];concept_layout_update(&data,"BASE");lv_refr_now(d);
+                        assert(verify_modifiers(screen,data.modifier_flags,style)==4);
+                        if(argc>1){char path[1024];snprintf(path,sizeof(path),"%s/tape-keys-%s.ppm",argv[1],cases[k]);FILE*f=fopen(path,"wb");assert(f);fprintf(f,"P6\n280 240\n255\n");fwrite(frame,1,sizeof(frame),f);fclose(f);}
+                    }
+                }
+                if((style==8||style==10)&&palette==0&&state==1) {
+                    const char *short_names[]={"SYS","NAV"};
+                    for(int k=0;k<2;k++) {
+                        if(style==8)dashboard_layout_update(&data,short_names[k]);else concept_layout_update(&data,short_names[k]);lv_obj_update_layout(screen);
+                        text_count=0;inspect(screen,names[style-1]);check_overlaps(names[style-1]);lv_refr_now(d);
+                        if(argc>1){char path[1024];snprintf(path,sizeof(path),"%s/%s-%s.ppm",argv[1],names[style-1],short_names[k]);FILE*f=fopen(path,"wb");assert(f);fprintf(f,"P6\n280 240\n255\n");fwrite(frame,1,sizeof(frame),f);fclose(f);}
+                    }
                 }
             }
             prospector_layouts_cycle_palette();
@@ -232,9 +274,63 @@ int main(int argc,char **argv) {
     lv_tick_inc(1000);host_ticks+=1000;lv_timer_handler();lv_refr_now(d);
     assert(flush_count==flat_before); /* A full flat history does not repaint. */
     lv_screen_load(parking_screen);prospector_layouts_destroy();lv_obj_delete(trace_screen);
+    lv_obj_t *terminal_screen=lv_obj_create(NULL);lv_obj_remove_style_all(terminal_screen);
+    lv_obj_set_size(terminal_screen,280,240);lv_screen_load(terminal_screen);prospector_layouts_init(terminal_screen);
+    prospector_layouts_set_style(PROSPECTOR_LAYOUT_TERMINAL);
+    for(int k=0;k<60;k++){trace.wpm_value=wave[k%32];prospector_layouts_update(&trace);lv_tick_inc(1000);host_ticks+=1000;lv_timer_handler();}
+    trace.wpm_value=42;prospector_layouts_update(&trace);lv_refr_now(d);unsigned green=0;
+    for(int y=174;y<209;y++)for(int x=24;x<256;x++){unsigned at=(y*280+x)*3;if(frame[at+1]>150&&frame[at]<200&&frame[at+2]<180)green++;}
+    assert(green>20);
+    if(argc>1){char path[1024];snprintf(path,sizeof(path),"%s/terminal-history.ppm",argv[1]);FILE*f=fopen(path,"wb");fprintf(f,"P6\n280 240\n255\n");fwrite(frame,1,sizeof(frame),f);fclose(f);}
+    for(int k=0;k<60;k++){lv_tick_inc(1000);host_ticks+=1000;lv_timer_handler();}
+    lv_refr_now(d);unsigned terminal_flat=flush_count;lv_tick_inc(1000);host_ticks+=1000;lv_timer_handler();lv_refr_now(d);assert(flush_count==terminal_flat);
+    dashboard_layout_reset_history();lv_refr_now(d);unsigned cleared=flush_count;lv_tick_inc(1000);host_ticks+=1000;lv_timer_handler();lv_refr_now(d);assert(flush_count==cleared);
+    lv_screen_load(parking_screen);prospector_layouts_destroy();lv_obj_delete(terminal_screen);
+    /* Real timer-driven motion, bounded redraws, coast-to-stop and teardown. */
+    lv_obj_t *tape_screen=lv_obj_create(NULL);lv_obj_remove_style_all(tape_screen);
+    lv_obj_set_size(tape_screen,280,240);lv_screen_load(tape_screen);prospector_layouts_init(tape_screen);
+    prospector_layouts_set_style(PROSPECTOR_LAYOUT_TAPE);
+    trace.wpm_value=42;trace.has_dynamic_data=true;prospector_layouts_update(&trace);lv_refr_now(d);
+    static uint8_t tape_reference[sizeof(frame)];memcpy(tape_reference,frame,sizeof(frame));
+    unsigned max_motion_pixels=0,moving_frames=0;
+    for(int k=0;k<90;k++) {
+        if(k==50){trace.wpm_value=0;prospector_layouts_update(&trace);lv_refr_now(d);}
+        unsigned before=flush_count;tape_motion_pixels=0;tape_motion_guard=true;
+        lv_tick_inc(80);host_ticks+=80;lv_timer_handler();lv_refr_now(d);tape_motion_guard=false;
+        if(flush_count>before)moving_frames++;
+        if(tape_motion_pixels>max_motion_pixels)max_motion_pixels=tape_motion_pixels;
+        assert(tape_motion_pixels<280*240/3);
+        for(int side=0;side<2;side++)for(int y=87;y<107;y++)for(int x=52+side*151;x<78+side*151;x++) {
+            unsigned at=(y*280+x)*3;assert(!memcmp(frame+at,tape_reference+at,3));
+        }
+        if(argc>1){char path[1024];snprintf(path,sizeof(path),"%s/tape-motion-%03d.ppm",argv[1],k);FILE*f=fopen(path,"wb");assert(f);fprintf(f,"P6\n280 240\n255\n");fwrite(frame,1,sizeof(frame),f);fclose(f);}
+    }
+    assert(moving_frames>=50&&moving_frames<90);
+    unsigned tape_stopped=flush_count;
+    for(int k=0;k<10;k++){lv_tick_inc(80);host_ticks+=80;lv_timer_handler();lv_refr_now(d);}
+    assert(flush_count==tape_stopped);
+    trace.wpm_value=42;prospector_layouts_update(&trace);
+    for(int k=0;k<20;k++){lv_tick_inc(80);host_ticks+=80;lv_timer_handler();lv_refr_now(d);}
+    trace.has_dynamic_data=false;trace.wpm_value=0;prospector_layouts_update(&trace);
+    concept_layout_reset_history(); /* The scanner bridge clears source history on disconnect. */
+    lv_refr_now(d);unsigned disconnect_frames=0;
+    for(int k=0;k<60;k++) {
+        unsigned before=flush_count;tape_motion_guard=true;tape_motion_pixels=0;
+        lv_tick_inc(80);host_ticks+=80;lv_timer_handler();lv_refr_now(d);tape_motion_guard=false;
+        if(flush_count>before)disconnect_frames++;
+        if(k==0)assert(flush_count>before); /* It must not stop immediately. */
+        if(argc>1){char path[1024];snprintf(path,sizeof(path),"%s/tape-disconnect-%03d.ppm",argv[1],k);FILE*f=fopen(path,"wb");assert(f);fprintf(f,"P6\n280 240\n255\n");fwrite(frame,1,sizeof(frame),f);fclose(f);}
+    }
+    assert(disconnect_frames>20&&disconnect_frames<60);
+    tape_stopped=flush_count;
+    for(int k=0;k<10;k++){lv_tick_inc(80);host_ticks+=80;lv_timer_handler();lv_refr_now(d);}
+    assert(flush_count==tape_stopped);
+    lv_screen_load(parking_screen);prospector_layouts_destroy();lv_obj_delete(tape_screen);
+    lv_tick_inc(80);host_ticks+=80;lv_timer_handler();lv_refr_now(d);
+    printf("TAPE motion: %u moving frames, max %u flushed pixels/frame; stationary battery digits, coast-stop, disconnect inertia and teardown passed\n",moving_frames,max_motion_pixels);
     lv_obj_t *dya_screen=lv_obj_create(NULL);lv_obj_remove_style_all(dya_screen);
     lv_obj_set_size(dya_screen,280,240);prospector_layouts_init(dya_screen);test_dya_contract();
     prospector_layouts_destroy();lv_obj_delete(dya_screen);
-    printf("216 layout states checked; %d foreground rectangles; unsafe: %d; clipped: %d; overlapping: %d\n",inspected,failures,clipping_failures,overlap_failures);
+    printf("288 layout states checked; %d foreground rectangles; unsafe: %d; clipped: %d; overlapping: %d\n",inspected,failures,clipping_failures,overlap_failures);
     return failures||clipping_failures||overlap_failures?1:0;
 }

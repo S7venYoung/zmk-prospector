@@ -13,7 +13,7 @@
 | --- | --- |
 | [本地 board](hardware/prospector-zmk-module/boards/kblade/) | kblade DTS、引脚、分区、板级配置 |
 | [ms2 Shield](hardware/prospector-zmk-module/boards/shields/prospector_ms2/) | 屏幕及背光配置 |
-| [display-themes](display-themes/README.md) | 九个主题、DYA 适配、字体及主机测试 |
+| [display-themes](display-themes/README.md) | 十二个主题、DYA 适配、字体及主机测试 |
 | [config](config/) | 固件配置和起始 keymap |
 | [硬件来源](hardware/UPSTREAM.md) | 本地硬件模块的固定来源与校验信息 |
 
@@ -49,7 +49,7 @@ bash zmk-prospector/scripts/build-ms2-dya.sh "$PWD"
 board:    kblade//zmk
 shield:   prospector_ms2 corne_dongle
 output:   build-ms2-dya/zephyr/zmk.uf2
-artifact: corne_ms2_dya_nine_themes
+artifact: corne_ms2_dya_twelve_themes
 ```
 
 脚本自动加入本地 `hardware/prospector-zmk-module` 和仓库根模块。
@@ -59,7 +59,7 @@ artifact: corne_ms2_dya_nine_themes
 ### GitHub Actions
 
 打开仓库 Actions → `build.yml` → Run workflow，分支选择 `codex/kblade-dya-four-themes`。
-该工作流只有手动触发入口，普通提交不自动构建。完成后下载 `corne_ms2_dya_nine_themes`。
+该工作流只有手动触发入口，普通提交不自动构建。完成后下载 `corne_ms2_dya_twelve_themes`。
 检查运行的提交号与自己准备刷入的版本一致，再提取 `zmk.uf2`。
 
 `zmk.uf2` 是刷写文件，`zmk.elf` 用于调试，`.config` 用于核对功能配置。
@@ -163,7 +163,7 @@ CONFIG_ZMK_PROSPECTOR_SCANNER_ORIGINAL=y
 - 其他分辨率、屏幕驱动或非 ms2 项目需要状态/字体/画布适配，不是任意 ZMK 屏幕即插即用。
 - 扫描仪版需要完整仓库的 `scanner/` 接收适配（仅扫描仪分支提供），
   单独复制主题不会自动获得广播接收功能。
-- 内部布局 ID 是 1–9，DYA 值是 0–8，二者相差 1。硬件默认布局 Kconfig 仍限 0–4；
+- 内部布局 ID 是 1–12，DYA 值是 0–11，二者相差 1。硬件默认布局 Kconfig 仍限 0–4；
   选新主题请使用 DYA，或在 LVGL 线程初始化布局后调用 `prospector_layouts_set_style()`。
   不能把 `CONFIG_PROSPECTOR_DEFAULT_LAYOUT` 写成 8 来选择 MONO。
 

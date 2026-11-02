@@ -4,7 +4,7 @@ Requires Pillow; generated C assets are the only firmware dependencies.
 """
 from pathlib import Path
 import re
-from PIL import Image
+from PIL import Image, ImageFilter, ImageChops
 
 root = Path(__file__).resolve().parents[1]
 source = (root / 'fonts/source/impact_56.c').read_text()
@@ -15,17 +15,34 @@ glyphs = [tuple(map(int, row)) for row in re.findall(
     r'\{\.bitmap_index = (\d+), \.adv_w = (\d+), \.box_w = (\d+), '
     r'\.box_h = (\d+), \.ofs_x = (-?\d+), \.ofs_y = (-?\d+)\}', source)]
 
-def generate(name, codepoints, sx, sy, line_height, baseline, bpp=4):
+def generate(name, codepoints, sx, sy, line_height, baseline, bpp=4, treatment=None):
     packed = bytearray(); descriptors = [(0, 0, 0, 0, 0, 0)]
     for cp in codepoints:
         offset, advance, width, height, ox, oy = glyphs[cp - 32 + 1]
         new_w, new_h = round(width * sx), round(height * sy)
         start = len(packed)
+        shear = 0
         if width and height:
             pixels = [((bitmap[offset + p // 2] >> (0 if p % 2 else 4)) & 15) * 17
                       for p in range(width * height)]
             image = Image.new('L', (width, height)); image.putdata(pixels)
             image = image.resize((new_w, new_h), Image.Resampling.LANCZOS)
+            if treatment == 'blueprint':
+                border = ImageChops.subtract(image.filter(ImageFilter.MaxFilter(3)), image.filter(ImageFilter.MinFilter(3)))
+                src = image.load(); edge = border.load()
+                for yy in range(new_h):
+                    for xx in range(new_w):
+                        edge[xx,yy] = max(edge[xx,yy],src[xx,yy] if (xx+yy)%4==0 else 0)
+                shear = round(new_h*.18)
+                slanted = Image.new('L',(new_w+shear,new_h))
+                for yy in range(new_h):
+                    slanted.paste(border.crop((0,yy,new_w,yy+1)),(round((new_h-1-yy)*.18),yy))
+                image = slanted; new_w += shear
+            elif treatment == 'terminal':
+                px = image.load()
+                for yy in range(new_h):
+                    if yy%5 in (3,4):
+                        for xx in range(new_w):px[xx,yy]=0
             levels = [min(15, max(0, round(p / 17))) for p in image.tobytes()]
             if bpp == 2:
                 levels = [round(p / 5) for p in levels]
@@ -34,7 +51,7 @@ def generate(name, codepoints, sx, sy, line_height, baseline, bpp=4):
             else:
                 if len(levels) % 2: levels.append(0)
                 packed.extend((levels[i] << 4) | levels[i + 1] for i in range(0, len(levels), 2))
-        descriptors.append((start, round(advance * sx), new_w, new_h, round(ox * sx), round(oy * sy)))
+        descriptors.append((start, round(advance * sx)+round(shear*16/3), new_w, new_h, round(ox * sx), round(oy * sy)))
     first = min(codepoints)
     lines = ['/* SPDX-License-Identifier: MIT',
              ' * Derived from fonts/source/impact_56.c.',
@@ -63,13 +80,16 @@ def generate(name, codepoints, sx, sy, line_height, baseline, bpp=4):
     target.write_text('\n'.join(lines))
     print(f'{name}: {len(packed)} bitmap bytes, {len(codepoints)} glyphs')
 
-generate('industrial_numeric_32', [32, 37, 45, 46] + list(range(48, 58)), 32/56, 32/56, 34, 5)
-generate('industrial_display_56', list(range(32, 96)), 1.70, 1, 58, 9)
-generate('industrial_brand_28', sorted(set(map(ord, ' .CORNE'))), .5, .5, 29, 5)
+if __name__ == '__main__':
+    generate('industrial_numeric_32', [32, 37, 45, 46] + list(range(48, 58)), 32/56, 32/56, 34, 5)
+    generate('industrial_display_56', list(range(32, 96)), 1.70, 1, 58, 9)
+    generate('industrial_brand_28', sorted(set(map(ord, ' .CORNE'))), .5, .5, 29, 5)
 
-generate('industrial_battery_32', [32, 45] + list(range(48, 58)), 0.70*32/56, 32/56, 34, 5)
+    generate('industrial_battery_32', [32, 45] + list(range(48, 58)), 0.70*32/56, 32/56, 34, 5)
 
-generate('dashboard_numeric_52', [32, 45, 46] + list(range(48, 58)), 52/56, 52/56, 54, 8, bpp=2)
-generate('dashboard_base_72', sorted(set(map(ord, ' .ABES'))), 1.50, 72/56, 74, 12, bpp=2)
+    generate('dashboard_numeric_52', [32, 45, 46] + list(range(48, 58)), 52/56, 52/56, 54, 8, bpp=2)
+    generate('dashboard_base_72', sorted(set(map(ord, ' .ABESNVY'))), 1.50, 72/56, 74, 12, bpp=2)
 
-generate('dashboard_mono_96', sorted(set(map(ord, ' .ABES'))), 1.70, 96/56, 98, 16, bpp=2)
+    generate('dashboard_mono_96', sorted(set(map(ord, ' .ABES'))), 1.70, 96/56, 98, 16, bpp=2)
+
+    generate('boot_title_56', sorted(set(map(ord, 'CORNE'))), 1.0, 1.0, 58, 9, bpp=2)
