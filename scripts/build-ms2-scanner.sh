@@ -16,5 +16,6 @@ command=(west build -s "$workspace/zmk/app" -d "$workspace/build-ms2-scanner"
   "-DZMK_CONFIG=$repo/config/scanner"
   "-DZMK_EXTRA_MODULES=$module;$repo")
 if [[ ${2:-} == --dry-run ]]; then printf '%q ' "${command[@]}";printf '\n';exit 0;fi
+python3 "$repo/scripts/patch_dya_bootloader_action.py" "$workspace/zmk/app/src/keymap.c"
 cd -- "$workspace"
 "${command[@]}"

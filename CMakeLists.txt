@@ -7,3 +7,5 @@ endif()
 add_subdirectory(modules/zmk-feature-runtime-macro)
 
 add_subdirectory(scanner)
+
+target_sources_ifdef(CONFIG_PROSPECTOR_DYA_BOOTLOADER_ACTION app PRIVATE src/dya_bootloader_action.c)
