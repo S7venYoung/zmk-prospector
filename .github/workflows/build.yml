@@ -43,6 +43,12 @@ jobs:
           key: ms18-dya-v1-${{ runner.os }}-${{ hashFiles('zmk-prospector/west.yml') }}
       - name: Build kblade ms18 scanner with twelve runtime themes
         run: bash zmk-prospector/scripts/build-ms18-scanner.sh "$GITHUB_WORKSPACE"
+      - name: Verify required scanner and touch features
+        run: |
+          config=build-ms18-scanner/zephyr/.config
+          for option in ZMK_PROSPECTOR_SCANNER_ORIGINAL ZMK_PROSPECTOR_BROADCAST_SCANNER ZMK_PROSPECTOR_DYA_SETTINGS ZMK_PROSPECTOR_TOUCH_GESTURES INPUT_CST816S; do
+            grep -qx "CONFIG_${option}=y" "$config" || exit 1
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: kblade_ms18_scanner_twelve_themes
