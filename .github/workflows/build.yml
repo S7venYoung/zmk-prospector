@@ -1,5 +1,7 @@
-name: Build ms18 twelve-theme touch scanner (manual only)
+name: Build ms18 twelve-theme touch scanner
 on:
+  push:
+    branches: [kl-touch]
   workflow_dispatch:
 jobs:
   build:
