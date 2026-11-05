@@ -1,4 +1,4 @@
-name: Build ms2 twelve-theme scanner (manual only)
+name: Build ms18 twelve-theme touch scanner (manual only)
 on:
   workflow_dispatch:
 jobs:
@@ -22,7 +22,7 @@ jobs:
             zmk-module-*
             zmk-behavior-*
             zmk-stdlib
-          key: ms2-dya-v1-${{ runner.os }}-${{ hashFiles('zmk-prospector/west.yml') }}
+          key: ms18-dya-v1-${{ runner.os }}-${{ hashFiles('zmk-prospector/west.yml') }}
       - name: Initialize pinned DYA workspace
         run: |
           west update --narrow --fetch-opt=--depth=1
@@ -38,15 +38,15 @@ jobs:
             zmk-module-*
             zmk-behavior-*
             zmk-stdlib
-          key: ms2-dya-v1-${{ runner.os }}-${{ hashFiles('zmk-prospector/west.yml') }}
-      - name: Build kblade ms2 scanner with twelve runtime themes
-        run: bash zmk-prospector/scripts/build-ms2-scanner.sh "$GITHUB_WORKSPACE"
+          key: ms18-dya-v1-${{ runner.os }}-${{ hashFiles('zmk-prospector/west.yml') }}
+      - name: Build kblade ms18 scanner with twelve runtime themes
+        run: bash zmk-prospector/scripts/build-ms18-scanner.sh "$GITHUB_WORKSPACE"
       - uses: actions/upload-artifact@v4
         with:
-          name: kblade_ms2_scanner_twelve_themes
+          name: kblade_ms18_scanner_twelve_themes
           path: |
-            build-ms2-scanner/zephyr/zmk.uf2
-            build-ms2-scanner/zephyr/zmk.elf
-            build-ms2-scanner/zephyr/.config
+            build-ms18-scanner/zephyr/zmk.uf2
+            build-ms18-scanner/zephyr/zmk.elf
+            build-ms18-scanner/zephyr/.config
           if-no-files-found: error
           include-hidden-files: true

@@ -73,7 +73,13 @@ static int changed(const zmk_event_t *eh) {
 ZMK_LISTENER(ms2_dya_settings, changed);
 ZMK_SUBSCRIPTION(ms2_dya_settings, zmk_custom_setting_changed);
 ZMK_SUBSCRIPTION(ms2_dya_settings, zmk_custom_settings_initialized);
+#if IS_ENABLED(CONFIG_ZMK_PROSPECTOR_TOUCH_GESTURES)
+void prospector_touch_start(void);
+#endif
 void prospector_dya_start(void) {
+#if IS_ENABLED(CONFIG_ZMK_PROSPECTOR_TOUCH_GESTURES)
+    prospector_touch_start();
+#endif
     if (!apply_timer) apply_timer = lv_timer_create(apply, 50, NULL);
     atomic_set(&dirty, 1);
 }
@@ -93,5 +99,39 @@ int prospector_dya_hand_slot(int hand) {
 int prospector_dya_scanner_keyboard(void) {
     int value=read_value(&scanner_keyboard,0);
     return value>=0&&value<CONFIG_PROSPECTOR_MAX_KEYBOARDS?value:-1;
+}
+#endif
+
+#if IS_ENABLED(CONFIG_ZMK_PROSPECTOR_TOUCH_GESTURES)
+/* LVGL timer caller: use the same values as USB/DYA. Save on the system
+ * work queue after a pause, rather than writing flash on the display thread. */
+#include <zephyr/kernel.h>
+static void save_touch(struct k_work *work) {
+    ARG_UNUSED(work);
+    zmk_custom_setting_save(&display_theme);
+    zmk_custom_setting_save(&display_brightness);
+    zmk_custom_setting_save(&display_palette);
+}
+static K_WORK_DELAYABLE_DEFINE(touch_save, save_touch);
+int prospector_dya_gesture(int theme_step, int brightness_step) {
+    const struct zmk_custom_setting *setting = theme_step ? &display_theme : &display_brightness;
+    int value = theme_step ? (read_value(setting, 0) + theme_step + 12) % 12
+        : CLAMP(read_value(setting, 60) + brightness_step, 1, 100);
+    int err = zmk_custom_setting_set_int32(setting, value, ZMK_CUSTOM_SETTING_WRITE_MODE_MEMORY);
+    if (!err) {
+        atomic_set(&dirty, 1);
+        k_work_reschedule(&touch_save, K_SECONDS(2));
+    }
+    return err;
+}
+int prospector_dya_touch_get_brightness(void) { return read_value(&display_brightness, 60); }
+void prospector_dya_touch_brightness(int value) {
+    prospector_dya_gesture(0, value - read_value(&display_brightness, 60));
+}
+void prospector_dya_touch_palette(void) {
+    int value = (read_value(&display_palette, 0) + 1) % 4;
+    if (!zmk_custom_setting_set_int32(&display_palette, value, ZMK_CUSTOM_SETTING_WRITE_MODE_MEMORY)) {
+        atomic_set(&dirty, 1); k_work_reschedule(&touch_save, K_SECONDS(2));
+    }
 }
 #endif

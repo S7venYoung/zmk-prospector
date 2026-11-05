@@ -14,3 +14,11 @@ config ZMK_PROSPECTOR_SCANNER_TIMING
       Log only modifier transitions, not nearby device names or every packet.
       RX queue and display-consumption timings exclude the keyboard-to-radio
       delay and the final panel flush. Disable after hardware diagnosis.
+
+config ZMK_PROSPECTOR_TOUCH_GESTURES
+    bool "CST816S swipe theme and brightness controls"
+    depends on ZMK_PROSPECTOR_BROADCAST_SCANNER && ZMK_PROSPECTOR_DYA_SETTINGS && INPUT
+    help
+      Original Scanner portrait touch coordinates rotated to landscape.
+      Down/up cycle twelve themes. Right opens navigation; down opens
+      the brightness slider. Matches scanner-mode coordinate rotation.

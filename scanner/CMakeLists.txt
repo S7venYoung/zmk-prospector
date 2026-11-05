@@ -4,3 +4,5 @@ if(CONFIG_ZMK_PROSPECTOR_BROADCAST_SCANNER)
   set_source_files_properties(${ms2_src}/s7789_update.c TARGET_DIRECTORY app PROPERTIES HEADER_FILE_ONLY ON)
   target_sources(app PRIVATE src/status_scanner.c src/scanner_core.c src/ms2_scanner_bridge.c src/bt_init.c src/usb_capacity.c)
 endif()
+
+target_sources_ifdef(CONFIG_ZMK_PROSPECTOR_TOUCH_GESTURES app PRIVATE src/touch_gestures.c)

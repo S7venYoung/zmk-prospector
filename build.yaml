@@ -1,5 +1,6 @@
 include:
   - board: kblade//zmk
-    shield: prospector_ms2 scanner_display
+    shield: prospector_ms18 scanner_display
     snippet: studio-rpc-usb-uart zmk-usb-logging
-    artifact-name: kblade_ms2_scanner_nine_themes
+    cmake-args: -DEXTRA_CONF_FILE=ms18-touch.conf
+    artifact-name: kblade_ms18_scanner_twelve_themes_touch
