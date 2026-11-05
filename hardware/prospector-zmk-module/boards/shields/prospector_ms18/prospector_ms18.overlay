@@ -28,7 +28,7 @@
     /* Alias for backlight */
     // aliases {
     //     led0 = &backlight;
-    // };
+    // }
 };
 
 /* Disable default SPI2 */
@@ -143,24 +143,23 @@
 /* ========== I2C Bus ========== */
 
 /*
- * I2C0 configuration for touch sensor (CST816S) and light sensor (APDS9960).
- * This MUST be in the shield overlay (not board-level boards/*.overlay)
- * because I2C0 shares hardware peripheral 0x40003000 with SPI0 on nRF52840.
- * Keyboards using SPI0 (e.g. PAW3222 trackball) would conflict if I2C0
- * were enabled at the board level for all builds.
+ * Touch bus for the MS18 mainboard. Actual board routing is:
+ * TP_SDA=P0.06, TP_SCL=P0.08, TP_RST=P0.04, TP_INT=P0.29.
+ * I2C0 shares its peripheral number with SPI0, but this shield uses SPI3
+ * for the LCD, so there is no peripheral conflict.
  */
 &pinctrl {
     i2c0_default: i2c0_default {
         group1 {
-            psels = <NRF_PSEL(TWIM_SDA, 0, 4)>,  /* D4 = P0.04 = SDA */
-                    <NRF_PSEL(TWIM_SCL, 0, 5)>;  /* D5 = P0.05 = SCL */
+            psels = <NRF_PSEL(TWIM_SDA, 0, 6)>,
+                    <NRF_PSEL(TWIM_SCL, 0, 8)>;
         };
     };
 
     i2c0_sleep: i2c0_sleep {
         group1 {
-            psels = <NRF_PSEL(TWIM_SDA, 0, 4)>,
-                    <NRF_PSEL(TWIM_SCL, 0, 5)>;
+            psels = <NRF_PSEL(TWIM_SDA, 0, 6)>,
+                    <NRF_PSEL(TWIM_SCL, 0, 8)>;
             low-power-enable;
         };
     };
@@ -172,21 +171,17 @@
     pinctrl-0 = <&i2c0_default>;
     pinctrl-1 = <&i2c0_sleep>;
     pinctrl-names = "default", "sleep";
-    clock-frequency = <100000>;  /* Standard mode 100kHz */
+    clock-frequency = <100000>;
 
-    /* Trial wiring: original Prospector Scanner CST816S, physical GPIOs.
-     * Do not use xiao_d: kblade's connector map differs from original XIAO. */
     touch_sensor: cst816s@15 {
         compatible = "hynitron,cst816s";
         reg = <0x15>;
         status = "okay";
-        irq-gpios = <&gpio0 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-        rst-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
+        irq-gpios = <&gpio0 29 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+        rst-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
     };
 
-    /* APDS9960 Light/Gesture Sensor (Step 5c - for auto-brightness) */
-    /* NOTE: INT not physically connected, using unused internal GPIO P0.09 */
-    /* P0.09 is NFC1 pin, not exposed on XIAO but available as GPIO */
+    /* Optional ambient light sensor, not fitted on this configuration. */
     apds9960: apds9960@39 {
         compatible = "avago,apds9960";
         reg = <0x39>;
@@ -195,6 +190,6 @@
     };
 };
 
-/* The board enables I2C1 on P0.04/P0.05 by default. Touch uses I2C0
- * on the same pins: only one controller may own those signals. */
+/* The board's default I2C1 uses unrelated pins. Disable it so this observer
+ * exposes only the actual touch bus and avoids ambiguous device selection. */
 &i2c1 { status = "disabled"; };
