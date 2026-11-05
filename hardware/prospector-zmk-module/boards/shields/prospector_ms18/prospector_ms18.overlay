@@ -194,3 +194,7 @@
         int-gpios = <&gpio1 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
     };
 };
+
+/* The board enables I2C1 on P0.04/P0.05 by default. Touch uses I2C0
+ * on the same pins: only one controller may own those signals. */
+&i2c1 { status = "disabled"; };
