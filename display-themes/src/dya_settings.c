@@ -60,7 +60,7 @@ static void apply(lv_timer_t *timer) {
 #if DT_HAS_COMPAT_STATUS_OKAY(pwm_leds)
     const struct device *backlight = DEVICE_DT_GET(DT_PARENT(DT_NODELABEL(backlight)));
     if (brightness >= 1 && brightness <= 100 && device_is_ready(backlight))
-        prospector_backlight_request((uint8_t)(100 - brightness));
+        prospector_backlight_request((uint8_t)brightness);
 #endif
 }
 static int changed(const zmk_event_t *eh) {

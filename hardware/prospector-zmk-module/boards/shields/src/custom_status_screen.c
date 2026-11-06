@@ -165,14 +165,11 @@ static void set_pwm_brightness(uint8_t brightness) {
     if (brightness < 1) {
         brightness = 1;
     }
-    /* INVERT: Backlight circuit is inverted (100% PWM = dark, 0% = bright)
-     * So we invert: user's 100% brightness → 0% PWM duty, 1% brightness → 99% PWM */
-    uint8_t pwm_value = 100 - brightness;
-    int ret = prospector_backlight_request(pwm_value);
+    int ret = prospector_backlight_request(brightness);
     if (ret < 0) {
         LOG_ERR("Failed to set brightness: %d", ret);
     } else {
-        LOG_INF("Backlight: user=%d%% -> PWM=%d%%", brightness, pwm_value);
+        LOG_INF("Backlight: user=%d%%", brightness);
     }
 }
 

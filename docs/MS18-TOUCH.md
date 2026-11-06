@@ -25,7 +25,8 @@ The overlay is laid out for the complete 280x240 landscape viewport: the
 navigation cards use symmetric 24-pixel margins, the brightness percentage and
 slider are centered, and the slider has an extended touch area. The slider uses
 the scanner-mode horizontal coordinate mapping so its knob follows the finger
-and dragging right increases brightness.
+and dragging right increases brightness. The MS18 backlight uses a direct PWM
+mapping: 1% is dim and 100% is full brightness.
 Touch and DYA share setting values; changes are saved after two seconds of inactivity.
 
 Build with `bash scripts/build-ms18-scanner.sh /path/to/west-workspace`, or run

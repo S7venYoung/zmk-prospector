@@ -28,8 +28,8 @@ static const struct device *backlight_dev = DEVICE_DT_GET(BACKLIGHT_NODE);
 
 /* Default brightness (0-100) */
 #if IS_ENABLED(CONFIG_ZMK_PROSPECTOR_DYA_SETTINGS)
-/* Same user brightness as DYA's unsaved default; ms2 PWM is inverted. */
-#define DEFAULT_BRIGHTNESS (100 - 60)
+/* Same user brightness as DYA's unsaved default. */
+#define DEFAULT_BRIGHTNESS 60
 #else
 #define DEFAULT_BRIGHTNESS 65
 #endif
@@ -67,9 +67,9 @@ static int backlight_init(void) {
         return -ENODEV;
     }
 
-    /* Set initial brightness to default value */
+    /* Hold the backlight off until LVGL has flushed a complete first frame. */
     ret = led_set_brightness(backlight_dev, BACKLIGHT_LED_INDEX,
-                             first_frame_ready ? requested_brightness : 100);
+                             first_frame_ready ? requested_brightness : 0);
     if (ret < 0) {
         LOG_ERR("Failed to set backlight brightness: %d", ret);
         return ret;
