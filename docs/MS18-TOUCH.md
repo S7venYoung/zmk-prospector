@@ -23,7 +23,9 @@ navigation page; swipe down opens brightness settings. Drag the slider to set
 This port preserves scanner-mode's gesture directions and coordinate rotation.
 The overlay is laid out for the complete 280x240 landscape viewport: the
 navigation cards use symmetric 24-pixel margins, the brightness percentage and
-slider are centered, and the slider has an extended touch area.
+slider are centered, and the slider has an extended touch area. The brightness
+page mirrors the CST816T's horizontal slider coordinate so dragging right
+increases brightness; this does not change the raw swipe directions.
 Touch and DYA share setting values; changes are saved after two seconds of inactivity.
 
 Build with `bash scripts/build-ms18-scanner.sh /path/to/west-workspace`, or run
