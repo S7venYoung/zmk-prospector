@@ -69,15 +69,7 @@ static lv_obj_t *create_action_card(lv_obj_t *parent, int32_t x, int32_t y,
 
 static void read_pointer(lv_indev_t *indev, lv_indev_data_t *data) {
     ARG_UNUSED(indev);
-    int32_t logical_x = atomic_get(&pointer_y);
-
-    /* The CST816T reports the brightness slider's horizontal movement in
-     * the opposite direction from the rotated display. The brightness page
-     * contains no other pointer targets, so mirror X there while leaving the
-     * raw gesture detector and all theme navigation untouched. */
-    if (page == 2) logical_x = display_width() - 1 - logical_x;
-
-    data->point.x = CLAMP(logical_x, 0, display_width() - 1);
+    data->point.x = CLAMP(atomic_get(&pointer_y), 0, display_width() - 1);
     data->point.y = CLAMP(display_height() - 1 - atomic_get(&pointer_x),
                           0, display_height() - 1);
     data->state = atomic_get(&pointer_down) ? LV_INDEV_STATE_PRESSED : LV_INDEV_STATE_RELEASED;
