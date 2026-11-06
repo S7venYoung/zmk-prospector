@@ -12,6 +12,12 @@
 #include "dya_settings.h"
 LOG_MODULE_REGISTER(scanner_touch, CONFIG_ZMK_LOG_LEVEL);
 #define TOUCH_NODE DT_NODELABEL(touch_sensor)
+#define UI_BG_COLOR 0x090B0F
+#define UI_PANEL_COLOR 0x171C24
+#define UI_PANEL_BORDER 0x2B3440
+#define UI_ACCENT_COLOR 0x4A90E2
+#define UI_TEXT_MUTED 0xA7B0BC
+#define UI_MARGIN 24
 struct gesture { int theme, brightness; };
 K_MSGQ_DEFINE(gestures, sizeof(struct gesture), 8, 4);
 static int x, y, start_x, start_y;
@@ -19,41 +25,157 @@ static bool pressed;
 static int64_t started, last_swipe;
 static lv_timer_t *timer;
 static atomic_t pointer_x, pointer_y, pointer_down;
-static lv_obj_t *menu, *slider;
+static lv_obj_t *menu, *slider, *brightness_value;
 static int page; /* 0: themes, 1: main/navigation, 2: display settings */
 static bool dragging;
 static int64_t last_tap;
+
+static int32_t display_width(void) {
+    lv_display_t *display = lv_display_get_default();
+    return display ? lv_display_get_horizontal_resolution(display) : 280;
+}
+
+static int32_t display_height(void) {
+    lv_display_t *display = lv_display_get_default();
+    return display ? lv_display_get_vertical_resolution(display) : 240;
+}
+
+static lv_obj_t *create_label(lv_obj_t *parent, const char *text, int32_t x, int32_t y,
+                              int32_t width, lv_color_t color, lv_text_align_t align) {
+    lv_obj_t *label = lv_label_create(parent);
+    lv_label_set_text(label, text);
+    lv_obj_set_pos(label, x, y);
+    lv_obj_set_width(label, width);
+    lv_obj_set_style_text_font(label, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_color(label, color, 0);
+    lv_obj_set_style_text_align(label, align, 0);
+    return label;
+}
+
+static lv_obj_t *create_action_card(lv_obj_t *parent, int32_t x, int32_t y,
+                                    int32_t width, int32_t height) {
+    lv_obj_t *card = lv_obj_create(parent);
+    lv_obj_set_pos(card, x, y);
+    lv_obj_set_size(card, width, height);
+    lv_obj_remove_flag(card, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_radius(card, 10, 0);
+    lv_obj_set_style_bg_color(card, lv_color_hex(UI_PANEL_COLOR), 0);
+    lv_obj_set_style_bg_opa(card, LV_OPA_COVER, 0);
+    lv_obj_set_style_border_width(card, 1, 0);
+    lv_obj_set_style_border_color(card, lv_color_hex(UI_PANEL_BORDER), 0);
+    lv_obj_set_style_pad_all(card, 0, 0);
+    return card;
+}
+
 static void read_pointer(lv_indev_t *indev, lv_indev_data_t *data) {
     ARG_UNUSED(indev);
-    data->point.x = CLAMP(atomic_get(&pointer_y), 0, 279);
-    data->point.y = CLAMP(239 - atomic_get(&pointer_x), 0, 239);
+    data->point.x = CLAMP(atomic_get(&pointer_y), 0, display_width() - 1);
+    data->point.y = CLAMP(display_height() - 1 - atomic_get(&pointer_x),
+                          0, display_height() - 1);
     data->state = atomic_get(&pointer_down) ? LV_INDEV_STATE_PRESSED : LV_INDEV_STATE_RELEASED;
 }
+
 static void slider_event(lv_event_t *event) {
     lv_event_code_t code = lv_event_get_code(event);
     if (code == LV_EVENT_PRESSED) dragging = true;
     if (code == LV_EVENT_RELEASED || code == LV_EVENT_PRESS_LOST) dragging = false;
-    if (code == LV_EVENT_VALUE_CHANGED)
-        prospector_dya_touch_brightness(lv_slider_get_value(slider));
+    if (code == LV_EVENT_VALUE_CHANGED) {
+        int value = lv_slider_get_value(slider);
+        prospector_dya_touch_brightness(value);
+        if (brightness_value) lv_label_set_text_fmt(brightness_value, "%d%%", value);
+    }
 }
+
 static void show_page(int next) {
     if (menu) lv_obj_delete(menu);
-    menu = NULL; slider = NULL; page = next; dragging = false;
+    menu = NULL; slider = NULL; brightness_value = NULL; page = next; dragging = false;
     if (!page) return;
+
+    const int32_t width = display_width();
+    const int32_t height = display_height();
+    const int32_t content_width = width - (2 * UI_MARGIN);
+
     menu = lv_obj_create(lv_layer_top());
-    lv_obj_set_size(menu, 280, 240); lv_obj_set_pos(menu, 0, 0);
+    lv_obj_set_size(menu, width, height);
+    lv_obj_set_pos(menu, 0, 0);
     lv_obj_remove_flag(menu, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_style_bg_color(menu, lv_color_hex(0x0a0a0a), 0);
+    lv_obj_set_style_radius(menu, 0, 0);
+    lv_obj_set_style_border_width(menu, 0, 0);
+    lv_obj_set_style_pad_all(menu, 0, 0);
+    lv_obj_set_style_bg_color(menu, lv_color_hex(UI_BG_COLOR), 0);
     lv_obj_set_style_bg_opa(menu, LV_OPA_COVER, 0);
-    lv_obj_t *label = lv_label_create(menu);
-    lv_label_set_text(label, page == 1 ? "DISPLAY\n\nSwipe down: brightness\nSwipe left: themes" : "BRIGHTNESS\n\nSwipe up: return");
-    lv_obj_set_style_text_font(label, &lv_font_montserrat_16, 0);
-    lv_obj_set_style_text_color(label, lv_color_white(), 0);
-    if (page == 2) {
-        slider = lv_slider_create(menu); lv_obj_set_size(slider, 220, 24);
-        lv_obj_set_pos(slider, 10, 130); lv_slider_set_range(slider, 1, 100);
+
+    lv_obj_t *title = create_label(menu, page == 1 ? "TOUCH CONTROL" : "DISPLAY",
+                                   UI_MARGIN, 14, content_width,
+                                   lv_color_white(), LV_TEXT_ALIGN_CENTER);
+    lv_obj_set_style_text_letter_space(title, 1, 0);
+
+    lv_obj_t *accent = lv_obj_create(menu);
+    lv_obj_set_size(accent, 64, 2);
+    lv_obj_align(accent, LV_ALIGN_TOP_MID, 0, 42);
+    lv_obj_remove_flag(accent, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_radius(accent, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_border_width(accent, 0, 0);
+    lv_obj_set_style_pad_all(accent, 0, 0);
+    lv_obj_set_style_bg_color(accent, lv_color_hex(UI_ACCENT_COLOR), 0);
+    lv_obj_set_style_bg_opa(accent, LV_OPA_COVER, 0);
+
+    if (page == 1) {
+        lv_obj_t *brightness = create_action_card(menu, UI_MARGIN, 58,
+                                                  content_width, 66);
+        create_label(brightness, "BRIGHTNESS", 16, 10, content_width - 64,
+                     lv_color_white(), LV_TEXT_ALIGN_LEFT);
+        create_label(brightness, "Swipe down to adjust", 16, 34, content_width - 64,
+                     lv_color_hex(UI_TEXT_MUTED), LV_TEXT_ALIGN_LEFT);
+        lv_obj_t *down = create_label(brightness, LV_SYMBOL_DOWN,
+                                      content_width - 54, 18, 34,
+                                      lv_color_hex(UI_ACCENT_COLOR), LV_TEXT_ALIGN_CENTER);
+        lv_obj_set_style_text_font(down, &lv_font_montserrat_16, 0);
+
+        lv_obj_t *themes = create_action_card(menu, UI_MARGIN, 138,
+                                              content_width, 66);
+        create_label(themes, "THEMES", 16, 10, content_width - 64,
+                     lv_color_white(), LV_TEXT_ALIGN_LEFT);
+        create_label(themes, "Swipe left to return", 16, 34, content_width - 64,
+                     lv_color_hex(UI_TEXT_MUTED), LV_TEXT_ALIGN_LEFT);
+        create_label(themes, LV_SYMBOL_LEFT, content_width - 54, 18, 34,
+                     lv_color_hex(UI_TEXT_MUTED), LV_TEXT_ALIGN_CENTER);
+    } else {
+        brightness_value = create_label(menu, "", UI_MARGIN, 61, content_width,
+                                        lv_color_hex(UI_ACCENT_COLOR), LV_TEXT_ALIGN_CENTER);
+        lv_obj_set_style_text_font(brightness_value, &lv_font_montserrat_28, 0);
+        lv_label_set_text_fmt(brightness_value, "%d%%", prospector_dya_touch_get_brightness());
+
+        slider = lv_slider_create(menu);
+        lv_obj_set_size(slider, content_width, 12);
+        lv_obj_align(slider, LV_ALIGN_TOP_MID, 0, 115);
+        lv_obj_set_style_radius(slider, LV_RADIUS_CIRCLE, LV_PART_MAIN);
+        lv_obj_set_style_bg_color(slider, lv_color_hex(0x3A424D), LV_PART_MAIN);
+        lv_obj_set_style_bg_opa(slider, LV_OPA_COVER, LV_PART_MAIN);
+        lv_obj_set_style_radius(slider, LV_RADIUS_CIRCLE, LV_PART_INDICATOR);
+        lv_obj_set_style_bg_color(slider, lv_color_hex(UI_ACCENT_COLOR), LV_PART_INDICATOR);
+        lv_obj_set_style_bg_opa(slider, LV_OPA_COVER, LV_PART_INDICATOR);
+        lv_obj_set_style_radius(slider, LV_RADIUS_CIRCLE, LV_PART_KNOB);
+        lv_obj_set_style_bg_color(slider, lv_color_white(), LV_PART_KNOB);
+        lv_obj_set_style_bg_opa(slider, LV_OPA_COVER, LV_PART_KNOB);
+        lv_obj_set_style_pad_all(slider, 7, LV_PART_KNOB);
+        lv_obj_set_style_shadow_width(slider, 5, LV_PART_KNOB);
+        lv_obj_set_style_shadow_color(slider, lv_color_black(), LV_PART_KNOB);
+        lv_obj_set_style_shadow_opa(slider, LV_OPA_40, LV_PART_KNOB);
+        lv_obj_set_ext_click_area(slider, 18);
+        lv_slider_set_range(slider, 1, 100);
         lv_slider_set_value(slider, prospector_dya_touch_get_brightness(), LV_ANIM_OFF);
         lv_obj_add_event_cb(slider, slider_event, LV_EVENT_ALL, NULL);
+
+        create_label(menu, "1", UI_MARGIN, 139, 32,
+                     lv_color_hex(UI_TEXT_MUTED), LV_TEXT_ALIGN_LEFT);
+        create_label(menu, "100", width - UI_MARGIN - 44, 139, 44,
+                     lv_color_hex(UI_TEXT_MUTED), LV_TEXT_ALIGN_RIGHT);
+
+        lv_obj_t *hint = create_label(menu, LV_SYMBOL_UP "  BACK TO CONTROL",
+                                      UI_MARGIN, 190, content_width,
+                                      lv_color_hex(UI_TEXT_MUTED), LV_TEXT_ALIGN_CENTER);
+        lv_obj_set_style_text_font(hint, &lv_font_montserrat_16, 0);
     }
 }
 static void input_cb(struct input_event *event, void *unused) {
