@@ -2,7 +2,7 @@
 
 ## MS18 触摸扫描仪自动亮度
 
-APDS9960 使用独立 4P 接口（I²C1），CST816S 触摸保留在 I²C0。光线模块接 3.3 V、GND、SDA（P0.31）和 SCL（P0.26），传感器地址为 `0x39`，INT 留空。上电后固件检查芯片 ID，并在显示线程定期读取环境光。DYA 设置 `display_auto_brightness` 默认为 1，触摸亮度滑块和 `display_brightness` 设置自动亮度的上限。设为 0 可恢复手动亮度。未检测到传感器时沿用手动值。
+APDS9960 使用独立 4P 接口（I²C1），CST816S 触摸保留在 I²C0。光线模块接 3.3 V、GND、SDA（P0.26）和 SCL（P0.31），传感器地址为 `0x39`，INT 留空。上电后固件检查芯片 ID，并在显示线程定期读取环境光。DYA 设置 `display_auto_brightness` 默认为 1，触摸亮度滑块和 `display_brightness` 设置自动亮度的上限。设为 0 可恢复手动亮度。未检测到传感器时沿用手动值。
 
 
 **[其他键盘接入 Scanner](GUIDE.md#其他键盘接入-scanner)**
