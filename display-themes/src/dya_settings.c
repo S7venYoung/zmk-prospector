@@ -16,6 +16,9 @@
 #include <zephyr/drivers/led.h>
 #include "dya_settings.h"
 #include "backlight_init.h"
+#if IS_ENABLED(CONFIG_PROSPECTOR_USE_AMBIENT_LIGHT_SENSOR)
+#include "brightness_control.h"
+#endif
 #define SUBSYSTEM "dongle_display_settings"
 static struct zmk_rpc_custom_subsystem_meta display_meta = {
     ZMK_RPC_CUSTOM_SUBSYSTEM_UI_URLS(),
@@ -45,19 +48,37 @@ static int32_t read_value(const struct zmk_custom_setting *setting, int32_t fall
     zmk_custom_setting_get_int32(setting, &value);
     return value;
 }
+#if IS_ENABLED(CONFIG_PROSPECTOR_USE_AMBIENT_LIGHT_SENSOR)
+DISPLAY_SETTING(display_auto_brightness, 1, 0, 1);
+static lv_timer_t *ambient_timer;
+
+static void refresh_brightness(lv_timer_t *timer) {
+    ARG_UNUSED(timer);
+    int level = read_value(&display_brightness, 60);
+    uint16_t clear;
+    if (read_value(&display_auto_brightness, 1) &&
+        brightness_control_sensor_available() &&
+        brightness_control_read_sensor(&clear) == 0) {
+        level = MIN(level, brightness_control_map_light_to_brightness(clear));
+    }
+    prospector_backlight_request(CLAMP(level, 1, 100));
+}
+#endif
 static void apply(lv_timer_t *timer) {
     ARG_UNUSED(timer);
     if (!atomic_cas(&dirty, 1, 0)) return;
     int32_t theme = read_value(&display_theme, 0);
     int32_t palette = read_value(&display_palette, 0);
-    int32_t brightness = read_value(&display_brightness, 60);
     if (theme < 0 || theme > 11 || palette < 0 || palette > 3) return;
     prospector_layouts_set_style((prospector_layout_t)(theme + 1));
     uint8_t current = theme == 0 ? field_layout_get_palette() : theme == 1
         ? operator_layout_get_palette() : theme == 2 ? radii_layout_get_palette() : 0;
     if (theme < 3) for (int i = 0; i < ((palette - current + 4) % 4); i++)
         prospector_layouts_cycle_palette();
-#if DT_HAS_COMPAT_STATUS_OKAY(pwm_leds)
+#if IS_ENABLED(CONFIG_PROSPECTOR_USE_AMBIENT_LIGHT_SENSOR)
+    refresh_brightness(NULL);
+#elif DT_HAS_COMPAT_STATUS_OKAY(pwm_leds)
+    int32_t brightness = read_value(&display_brightness, 60);
     const struct device *backlight = DEVICE_DT_GET(DT_PARENT(DT_NODELABEL(backlight)));
     if (brightness >= 1 && brightness <= 100 && device_is_ready(backlight))
         prospector_backlight_request((uint8_t)brightness);
@@ -80,10 +101,18 @@ void prospector_dya_start(void) {
 #if IS_ENABLED(CONFIG_ZMK_PROSPECTOR_TOUCH_GESTURES)
     prospector_touch_start();
 #endif
+#if IS_ENABLED(CONFIG_PROSPECTOR_USE_AMBIENT_LIGHT_SENSOR)
+    if (!ambient_timer)
+        ambient_timer = lv_timer_create(refresh_brightness, CONFIG_PROSPECTOR_ALS_UPDATE_INTERVAL_MS, NULL);
+#endif
     if (!apply_timer) apply_timer = lv_timer_create(apply, 50, NULL);
     atomic_set(&dirty, 1);
 }
 void prospector_dya_stop(void) {
+#if IS_ENABLED(CONFIG_PROSPECTOR_USE_AMBIENT_LIGHT_SENSOR)
+    if (ambient_timer) lv_timer_delete(ambient_timer);
+    ambient_timer = NULL;
+#endif
     if (apply_timer) lv_timer_delete(apply_timer);
     apply_timer = NULL;
 }

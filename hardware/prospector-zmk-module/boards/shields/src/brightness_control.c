@@ -40,7 +40,11 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 // ========== Direct I2C APDS9960 Implementation ==========
 
 // APDS9960 I2C Address
-#define APDS9960_I2C_ADDR       0x39
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(apds9960), okay)
+#define APDS9960_I2C_ADDR DT_REG_ADDR(DT_NODELABEL(apds9960))
+#else
+#define APDS9960_I2C_ADDR 0x39
+#endif
 
 // APDS9960 Register Addresses
 #define APDS9960_ENABLE_REG     0x80
@@ -238,7 +242,9 @@ static int brightness_control_init(void) {
 
     // Get I2C device (from device tree)
     i2c_dev = NULL;
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c0), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(apds9960), okay)
+    i2c_dev = DEVICE_DT_GET(DT_BUS(DT_NODELABEL(apds9960)));
+#elif DT_NODE_HAS_STATUS(DT_NODELABEL(i2c0), okay)
     i2c_dev = DEVICE_DT_GET(DT_NODELABEL(i2c0));
 #endif
 

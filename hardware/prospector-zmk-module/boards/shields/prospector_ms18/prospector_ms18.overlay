@@ -181,12 +181,9 @@
         rst-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
     };
 
-    /* Optional ambient light sensor, not fitted on this configuration. */
-    apds9960: apds9960@39 {
-        compatible = "avago,apds9960";
+    /* Polled directly by brightness_control.c; four-wire ALS, no IRQ. */
+    apds9960: light-sensor@39 {
         reg = <0x39>;
-        status = "disabled";
-        int-gpios = <&gpio1 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
     };
 };
 
